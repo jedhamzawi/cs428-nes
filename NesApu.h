@@ -1,5 +1,9 @@
 #pragma once
-class NesApu : public ProcessingUnit {
+#include "AbstractClockable.h"
+
+class NesApu : public AbstractClockable {
+
 public:
-	void step_to(int t_master_clock) override;
+	NesApu() = default; 	// default constructor
+	void step();
 };
