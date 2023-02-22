@@ -2,12 +2,16 @@
 #include "INESHeader.h"
 #include <stdio.h>
 #include <iostream>
-
-
-
-
+#include <fstream>
+#include <bitset>
 
 int main()
 {
-    cout << "hello world";
+    RomParser myParser = RomParser();
+
+    myParser.parseHeader("smb.nes");
+
 }
+
+
+
