@@ -7,10 +7,10 @@ class INESHEader
     private:
         //raw variables (straight from the source ROM)
         char16_t nesString[3]; //This is a three character idetnifier that simply has "NES" to identify it as an iNES file
-        int8_t fileFormatIdent; //This is a 1 byte identifier value, should have $1A
-        int8_t numPrgRom; //This is the number of 16 kb PRG-ROM banks (Program ROM)
-        int8_t numChrRom; //This is the number of 8 kb CHR-ROM / VROM banks (used for graphical information)
-        int8_t romControlOne; //This is an 8 bit binary number that indicates different chips and s   
+        uint8_t fileFormatIdent; //This is a 1 byte identifier value, should have $1A
+        uint8_t numPrgRom; //This is the number of 16 kb PRG-ROM banks (Program ROM)
+        uint8_t numChrRom; //This is the number of 8 kb CHR-ROM / VROM banks (used for graphical information)
+        uint8_t romControlOne; //This is an 8 bit binary number that indicates different chips and s   
         /*
         Bit 0 - Indicates the type of mirroring used by the game
         where 0 indicates horizontal mirroring, 1 indicates
@@ -24,14 +24,14 @@ class INESHEader
         */
 
 
-        int8_t romControlTwo;//Second 8-bit binaary number that is used for control modes
+        uint8_t romControlTwo;//Second 8-bit binaary number that is used for control modes
         /*
             • Bits 0-3 - Reserved for future usage and should all be 0.
             • Bits 4-7 - Four upper bits of the mapper number. 
         */
 
-        int8_t numRAM; //The number of 8kb ram banks. For compatabiltiy reasons if this value is 0 it should be assumed to be 1
-        int8_t reservedBuffer[7]; //reserved for future usage and should all be 0
+        uint8_t numRAM; //The number of 8kb ram banks. For compatabiltiy reasons if this value is 0 it should be assumed to be 1
+        uint8_t reservedBuffer[7]; //reserved for future usage and should all be 0
 
 
 
@@ -44,8 +44,8 @@ class INESHEader
     public:
 
         //constructor
-        INESHEader(char16_t nesString[], int8_t fileFormatIdent, int8_t numPrgRom, int8_t numChrRom,
-        int8_t romControlOne, int8_t romControlTwo, int8_t numRAM, int8_t reservedBuffer[]);
+        INESHEader(char16_t nesString[], uint8_t fileFormatIdent, uint8_t numPrgRom, uint8_t numChrRom,
+        uint8_t romControlOne, uint8_t romControlTwo, uint8_t numRAM, uint8_t reservedBuffer[]);
 
         bool isValidHeader(); //check that the file given is a valid iNES file
 
