@@ -1,5 +1,5 @@
 #pragma once
-
+#include "INESHeader.h"
 
 
 
@@ -49,5 +49,10 @@ enum mapper
 
 class RomParser
 {
+    private:
+        INESHEader romHeader; // all the header data of the ROM
+
+    public:
+        bool parseHeader(char16_t fileName[]); //this function will be used to read in the header and then send it to the INESHeader class to be parsed and checked properly
 
 };
