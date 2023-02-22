@@ -26,6 +26,9 @@ CMakeLists.txt
 *.la
 *.lo
 
+#vscode config
+*.vscode
+
 # Shared objects (inc. Windows DLLs)
 *.dll
 *.so
