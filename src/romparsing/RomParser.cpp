@@ -12,6 +12,15 @@ RomParser::RomParser()
 }
 
 
+/*
+ * This function does pretty much all the work of reading in NES ROM files and interpreting them into a usable state
+ *
+ * All information about header data can be found in the INESHeader.h file
+ * after reading in the header the parser currently just goes in and assigns the program roms and character roms as
+ * 2d arrays, with the first value representing the rom number and the second the byte.
+ * When I better understand how we are actually storing opcodes I can update this to match.
+ *
+ */
 bool RomParser::parseROM(std::string fileName)
 {
     std::string filename = fileName; // Replace with your file name
@@ -20,6 +29,7 @@ bool RomParser::parseROM(std::string fileName)
     if (infile) {
         char byte;
 
+        //BEGIN HEADER READ IN
         //read the first three bytes in as chars
         char nesIDENT[3];
         for (int x = 0; x < 3; x++)
@@ -52,8 +62,10 @@ bool RomParser::parseROM(std::string fileName)
         {
             infile.get(byte);
         }
+        //END HEADER READ IN
 
-        this->romHeader.printHeaderInformation();
+
+        //this->romHeader.printHeaderInformation();
 
 
 
