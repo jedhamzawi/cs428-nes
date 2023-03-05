@@ -64,3 +64,8 @@ bool RomParser::parseHeader(std::string fileName)
 
 }
 
+INESHeader RomParser::getHeader()
+{
+    return romHeader;
+}
+
