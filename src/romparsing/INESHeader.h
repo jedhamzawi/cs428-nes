@@ -83,8 +83,7 @@ class INESHeader
         //derived variables
         mapper headerMapper; // This variable is used to store the mapper type found in the header
 
-        bool assignAndCheckMapper();//This function will be used to assign the mapper type as well as checkign if it is valid.
-        //returns false if the mapper is an invalid type
+
 
     public:
 
@@ -95,13 +94,26 @@ class INESHeader
         //empty constructor
         INESHeader();
 
-        bool isValidHeader(); //check that the file given is a valid iNES file
-
-        char32_t errorMessage[]; //just an error message that can be used to let the user know what is wrogn with the header
+        //bool isValidHeader(); //check that the file given is a valid iNES file
 
 
+        bool printHeaderInformation(); //A diagnostic print function for us to verify what all the header has
 
+        //char32_t errorMessage[]; //just an error message that can be used to let the user know what is wrong with the header
 
+    uint8_t getNumPrgRom() const;
+
+    uint8_t getNumChrRom() const;
+
+    uint8_t getRomControlOne() const;
+
+    uint8_t getRomControlTwo() const;
+
+    uint8_t getNumRam() const;
+
+    const uint8_t *getReservedBuffer() const;
+
+    mapper getHeaderMapper() const;
 
 
 };

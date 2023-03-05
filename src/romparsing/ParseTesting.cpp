@@ -9,7 +9,7 @@ int main()
 {
     RomParser myParser = RomParser();
 
-    myParser.parseHeader("smb.nes");
+    myParser.parseROM("smb.nes");
 
 }
 

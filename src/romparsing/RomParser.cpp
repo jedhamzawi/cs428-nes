@@ -2,7 +2,8 @@
 #include <fstream>
 #include <bitset>
 #include "RomParser.h"
-
+//#include "Opcode.h"
+//#include "OpcodeTable.h"
 
 
 RomParser::RomParser()
@@ -11,7 +12,7 @@ RomParser::RomParser()
 }
 
 
-bool RomParser::parseHeader(std::string fileName)
+bool RomParser::parseROM(std::string fileName)
 {
     std::string filename = fileName; // Replace with your file name
     std::ifstream infile(filename, std::ios::binary);
@@ -44,11 +45,51 @@ bool RomParser::parseHeader(std::string fileName)
         infile.get(byte);
         uint8_t numRAM = static_cast<uint8_t>(byte);
 
-        romHeader = INESHeader(nesIDENT, fileFormatIdent, numPrgRom, numChrRom, romControlOne, romControlTwo, numRAM, NULL);
+        this->romHeader = INESHeader(nesIDENT, fileFormatIdent, numPrgRom, numChrRom, romControlOne, romControlTwo, numRAM, NULL);
+
+        //we should read in the trainer data just in case
+        for (int i = 0; i < 7; i++)
+        {
+            infile.get(byte);
+        }
+
+        this->romHeader.printHeaderInformation();
 
 
 
-        while (infile.get(byte)) {
+        //This loop is where we need to store all of the PRG-ROM data into banks
+        for (int x = 0; x < this->romHeader.getNumPrgRom(); x++)
+        {
+            for (int y = 0; y < PRG_ROM_SIZE; y++)
+            {
+                infile.get(byte);
+                this->programROMS[x][y] = static_cast<uint8_t>(byte);
+                std::bitset<8> bits(byte);
+
+                //std::cout << bits.to_string() << " " << std::endl;
+            }
+        }
+        std::cout << "FINISHED PRG ROMS" << std::endl;
+
+
+        //This loop is where we need to store all of the PRG-ROM data into banks
+        for (int x = 0; x < this->romHeader.getNumChrRom(); x++)
+        {
+            for (int y = 0; y < CHR_ROM_SIZE; y++)
+            {
+                infile.get(byte);
+                this->characterROMS[x][y] = static_cast<uint8_t>(byte);
+                std::bitset<8> bits(byte);
+
+                std::cout << bits.to_string() << " " << std::endl;
+            }
+        }
+        std::cout << "FINISHED CHR ROMS" << std::endl;
+
+
+        //Cleaning up any additonal data for the time being
+        while (infile.get(byte))
+        {
             std::bitset<8> bits(byte);
 
             std::cout << bits.to_string() << " " << std::endl;
