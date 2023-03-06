@@ -5,8 +5,7 @@ Opcode::Opcode(std::string mnemonic, AddressingMode mode, uint8_t bytes, uint8_t
     : mnemonic(std::move(mnemonic))
     , mode(mode)
     , bytes(bytes)
-    , cycles(cycles)
-{}
+    , cycles(cycles) {}
 
 std::string Opcode::getMnemonic() const {
     return mnemonic;
