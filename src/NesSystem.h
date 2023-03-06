@@ -2,16 +2,18 @@
 #include "NesCpu.h"
 #include "NesPpu.h"
 #include "NesApu.h"
+#include "Rom.h"
 
 class NesSystem {
 private:
-	static constexpr uint16_t ADDRESS_SPACE_SIZE = 65536;
+	static constexpr uint32_t ADDRESS_SPACE_SIZE = 65536;
 	int masterClock;
 	NesCpu cpu;
 	NesPpu ppu;
 	NesApu apu;
 
 	void tick();
+    void initCpu();
 
 public:
 	const int TICKS_PER_FRAME = 357954; 			// (21,477,272 ticks/sec)  /  (60 frames/sec)
@@ -19,5 +21,6 @@ public:
 
 	NesSystem() : cpu(memory), ppu(memory) {} // pass pointer to memory to cpu and ppu
 
-	void run();
+    void loadRom(Rom *rom);
+    [[noreturn]] void run();
 };

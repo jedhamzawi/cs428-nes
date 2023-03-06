@@ -5,7 +5,7 @@ class NesPpu : public AbstractClockable {
 private:
 	uint8_t* memory;										// pointer to NesSystem memory
 public:
-	NesPpu(uint8_t* memory);
-	~NesPpu();
-	void step();
+	NesPpu(uint8_t* memory): memory(memory) {}
+	~NesPpu() {}
+	void step() {};
 };

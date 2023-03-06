@@ -1,6 +1,8 @@
 #include <iostream>
 #include <fstream>
 #include <bitset>
+#include <array>
+
 #include "RomParser.h"
 //#include "Opcode.h"
 //#include "OpcodeTable.h"
@@ -21,7 +23,7 @@ RomParser::RomParser()
  * When I better understand how we are actually storing opcodes I can update this to match.
  *
  */
-bool RomParser::parseROM(std::string fileName)
+Rom* RomParser::parseROM(std::string fileName)
 {
     std::string filename = fileName; // Replace with your file name
     std::ifstream infile(filename, std::ios::binary);
@@ -35,6 +37,7 @@ bool RomParser::parseROM(std::string fileName)
         for (int x = 0; x < 3; x++)
         {
             infile.get(byte);
+            // TODO: Remove demo or log
             std::cout << byte << std::endl; //check that these first three are the right chars for testing purposes
             nesIDENT[x] = byte;
         }
@@ -55,7 +58,7 @@ bool RomParser::parseROM(std::string fileName)
         infile.get(byte);
         uint8_t numRAM = static_cast<uint8_t>(byte);
 
-        this->romHeader = INESHeader(nesIDENT, fileFormatIdent, numPrgRom, numChrRom, romControlOne, romControlTwo, numRAM, NULL);
+        INESHeader romHeader = INESHeader(nesIDENT, fileFormatIdent, numPrgRom, numChrRom, romControlOne, romControlTwo, numRAM, NULL);
 
         //we should read in the trainer data just in case
         for (int i = 0; i < 7; i++)
@@ -66,37 +69,39 @@ bool RomParser::parseROM(std::string fileName)
 
 
         //this->romHeader.printHeaderInformation();
-
-
-
+        std::array<std::array<uint8_t, PRG_ROM_SIZE>, MAX_ROM_BANKS> programROMS{}; //This is an array of all the program rom stored as single bytes.
         //This loop is where we need to store all of the PRG-ROM data into banks
-        for (int x = 0; x < this->romHeader.getNumPrgRom(); x++)
+        for (int x = 0; x < romHeader.getNumPrgRom(); x++)
         {
             for (int y = 0; y < PRG_ROM_SIZE; y++)
             {
                 infile.get(byte);
-                this->programROMS[x][y] = static_cast<uint8_t>(byte);
+                programROMS[x][y] = static_cast<uint8_t>(byte);
                 std::bitset<8> bits(byte);
 
+                // TODO: Remove demo or log
                 //std::cout << bits.to_string() << " " << std::endl;
             }
         }
+        // TODO: Remove demo or log
         std::cout << "FINISHED PRG ROMS" << std::endl;
 
 
-        //This loop is where we need to store all of the PRG-ROM data into banks
-        for (int x = 0; x < this->romHeader.getNumChrRom(); x++)
+        //This loop is where we need to store all of the CHR-ROM data into banks
+        std::array<std::array<uint8_t, PRG_ROM_SIZE>, MAX_ROM_BANKS> characterROMS{};
+        for (int x = 0; x < romHeader.getNumChrRom(); x++)
         {
             for (int y = 0; y < CHR_ROM_SIZE; y++)
             {
                 infile.get(byte);
-                this->characterROMS[x][y] = static_cast<uint8_t>(byte);
+                characterROMS[x][y] = static_cast<uint8_t>(byte);
                 std::bitset<8> bits(byte);
 
                 std::cout << bits.to_string() << " " << std::endl;
             }
         }
-        std::cout << "FINISHED CHR ROMS" << std::endl;
+        // TODO: Remove demo or log
+        std::cout << "FINISHED CHR ROMS" << std::endl << std::endl;
 
 
         //Cleaning up any additonal data for the time being
@@ -107,18 +112,15 @@ bool RomParser::parseROM(std::string fileName)
             std::cout << bits.to_string() << " " << std::endl;
         }
         infile.close();
+
+        return new Rom(romHeader, programROMS, characterROMS);
     }
     else {
+        // TODO: Log
         std::cerr << "Unable to open file: " << filename << std::endl;
-        return 1;
+        return nullptr;
     }
 
-    return 0;
+    return nullptr;
 
 }
-
-INESHeader RomParser::getHeader()
-{
-    return romHeader;
-}
-
