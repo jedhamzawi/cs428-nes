@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include "NesCpu.h"
+#include "Instruction.h"
 
 NesCpu::NesCpu(uint8_t* memory): memory(memory){}
 
@@ -9,16 +10,23 @@ NesCpu::~NesCpu() = default;
 void NesCpu::step() {
     // Check if starting instruction
     if (this->clock == 0) {
+        std::cout << "PC: " << std::hex << 0u + this->programCounter;
+        Instruction instruction = this->fetch();
 
-        uint8_t opcodeByte = this->fetch();
-
-        Opcode opcode = OpcodeTable::getOpcode(opcodeByte);
         // TODO: Remove demo or log
-        std::cout << opcode.getMnemonic() << std::endl;
-        int instructionCost = this->execute(opcode);
+        std::cout << "  " << instruction.getOpcode().getMnemonic();
+        if (instruction.getOperand() != 0) {
+            std::cout << " 0x" << 0u + instruction.getOperand();
+        }
+        std::cout << std::endl;
+
+
+        int instructionCost = this->execute(instruction);
+
 
         // Set internal clock to instruction's step cost
         this->clock += instructionCost;
+        incrementProgramCounter();
     }
     // Wait until instruction's step cost is paid
     this->clock--;
@@ -34,40 +42,42 @@ uint8_t NesCpu::read(uint16_t addr) {
 uint16_t NesCpu::read2Bytes(uint16_t addr) {
     uint16_t lowByte = read(addr);
     uint16_t highByte = read(addr + 1);
-    return (highByte << 8) | (lowByte);
+    return (highByte << 8) | lowByte;
 }
 
 void NesCpu::write(uint16_t addr, uint8_t val) {
     memory[addr] = val;
 }
 
-uint8_t NesCpu::fetch() {
-    uint8_t opcode = read(this->programCounter);
-    this->programCounter++;
-    return opcode;
+Instruction NesCpu::fetch() {
+    uint8_t opcodeByte = read(this->programCounter);
+    Opcode opcode = OpcodeTable::getOpcode(opcodeByte);
+    this->programCounterOffset = 1;
+
+    short pageBoundaryCost = 0;
+    uint16_t operandAddress = getOperandAddress(opcode.getAddressingMode(), pageBoundaryCost);
+    uint8_t operand = read(operandAddress);
+
+    return {opcode, operand, pageBoundaryCost};
 }
 
 
 // ======================== INSTRUCTIONS ======================== //
 
-int NesCpu::execute(const Opcode &opcode) {
+int NesCpu::execute(const Instruction &instruction) {
 
-    int pageBoundaryCost = 0;
-    uint16_t operandAddress = getOperandAddress(opcode.getAddressingMode(), pageBoundaryCost); 
-    uint8_t operand = read(operandAddress);
-
-    switch(opcode.getBytes()) {
+    switch(instruction.getOpcode().getBytes()) {
 
         // ADC - add with carry
         case 0x61: case 0x65: case 0x69: case 0x6D:
         case 0x71: case 0x75: case 0x79: case 0x7D:
-            adc(operand);
+            adc(instruction.getOperand());
             break;
 
         // SBC - subtract with carry
         case 0xE1: case 0xE5: case 0xE9: case 0xED:
         case 0xF1: case 0xF5: case 0xF9: case 0xFD:
-            sbc(operand);
+            sbc(instruction.getOperand());
             break;
 
         // Other instructions...
@@ -76,7 +86,7 @@ int NesCpu::execute(const Opcode &opcode) {
             // Unknown opcode, handle error here
             break;
     }
-    return opcode.getCycles() + pageBoundaryCost;
+    return instruction.getOpcode().getCycles() + instruction.getPageBoundaryCost();
 }
 
 int NesCpu::adc(uint8_t operand) {
@@ -100,23 +110,24 @@ int NesCpu::sbc(uint8_t operand) {
 // ======================== ADDRESSING MODES ======================== //
 
 // TODO: handle page crossing when modes like zero page x or absolute y wrap addresses??
-uint16_t NesCpu::getOperandAddress(AddressingMode mode, int& pageBoundaryCost) {
+uint16_t NesCpu::getOperandAddress(AddressingMode mode, short& pageBoundaryCost) {
+    uint16_t addrLoc = this->programCounter + this->programCounterOffset;
     uint16_t address = 0;
     uint16_t absoluteAddress;
     uint8_t zeroPageAddress;
     uint16_t indirectAddress;
     switch (mode) {
         case AddressingMode::IMMEDIATE:
-            address = this->programCounter;
-            this->programCounter++;
+            address = addrLoc;
+            this->programCounterOffset++;
             break;
         case AddressingMode::ABSOLUTE:
-            address = read2Bytes(this->programCounter);
-            this->programCounter += 2;
+            address = read2Bytes(addrLoc);
+            this->programCounterOffset += 2;
             break;
         case AddressingMode::ABSOLUTE_X:
-            absoluteAddress = read2Bytes(this->programCounter);
-            this->programCounter += 2;
+            absoluteAddress = read2Bytes(addrLoc);
+            this->programCounterOffset += 2;
             address = absoluteAddress + this->regX;
 
             if (this->isPageBoundaryCrossed(absoluteAddress, address)) {
@@ -125,8 +136,8 @@ uint16_t NesCpu::getOperandAddress(AddressingMode mode, int& pageBoundaryCost) {
 
             break;
         case AddressingMode::ABSOLUTE_Y:
-            absoluteAddress = read2Bytes(this->programCounter);
-            this->programCounter += 2;
+            absoluteAddress = read2Bytes(addrLoc);
+            this->programCounterOffset += 2;
             address = absoluteAddress + this->regY;
             
             if (this->isPageBoundaryCrossed(absoluteAddress, address)) {
@@ -135,35 +146,34 @@ uint16_t NesCpu::getOperandAddress(AddressingMode mode, int& pageBoundaryCost) {
             
             break;
         case AddressingMode::ZERO_PAGE:
-            address = read(this->programCounter);   // Casted uint8_t to uint16_t which is like byte $xx + zero page $0000 = $00xx
-            this->programCounter++;
+            address = read(addrLoc);   // Casted uint8_t to uint16_t which is like byte $xx + zero page $0000 = $00xx
+            this->programCounterOffset++;
             break;
         case AddressingMode::ZERO_PAGE_X:
-            zeroPageAddress = read(this->programCounter);
-            this->programCounter++;
+            zeroPageAddress = read(addrLoc);
             address = (uint8_t)(zeroPageAddress + this->regX);   // uint8_t handles the wrapping before uint16_t assignment
+            this->programCounterOffset++;
             break;
         case AddressingMode::ZERO_PAGE_Y:
-            zeroPageAddress = read(this->programCounter);
-            this->programCounter++;
+            zeroPageAddress = read(addrLoc);
             address = (uint8_t)(zeroPageAddress + this->regY);   // uint8_t handles the wrapping before uint16_t assignment
+            this->programCounterOffset++;
             break;
         case AddressingMode::INDIRECT_X:
-            zeroPageAddress = read(this->programCounter);
-            this->programCounter++;
+            zeroPageAddress = read(addrLoc);
             indirectAddress = (uint8_t)(zeroPageAddress + this->regX);   // uint8_t handles the wrapping before uint16_t assignment
             address = read2Bytes(indirectAddress);
+            this->programCounterOffset++;
             break;
         case AddressingMode::INDIRECT_Y:
-            zeroPageAddress = read(this->programCounter);
-            this->programCounter++;
+            zeroPageAddress = read(addrLoc);
             indirectAddress = read2Bytes(zeroPageAddress);
             address = indirectAddress + regY;
 
             if (this->isPageBoundaryCrossed(indirectAddress, address)) {
                 pageBoundaryCost = 1;
             }
-            
+            this->programCounterOffset++;
             break;
         default:
         // TODO: error handling
@@ -271,4 +281,9 @@ bool NesCpu::isPageBoundaryCrossed(uint16_t addr1, uint16_t addr2) {
 // Set program start location based on RESET vector
 void NesCpu::initProgramCounter() {
     programCounter = memory[0xFFFD] * 256 + memory[0xFFFC];
+}
+
+void NesCpu::incrementProgramCounter() {
+    this->programCounter += this->programCounterOffset;
+    this->programCounterOffset = 0;
 }
