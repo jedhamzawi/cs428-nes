@@ -1,106 +1,142 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 #include "AbstractClockable.h"
+#include "OpcodeTable.h"
 
 
 // NOTE: The 6502 is little endian, the least significant byte comes first
 class NesCpu : public AbstractClockable {
 private:
-	static constexpr uint16_t ADDRESS_SPACE_SIZE = 65536;
 	static constexpr uint8_t STACK_POINTER_START = 0xFD;  	// Check documentation, should be $FF, but power-on/reset decrements 3?
-
-	enum AddressingMode {
-		IMPLIED,         // Implied addressing mode (no operand)
-		ACCUMULATOR,     // Accumulator addressing mode (operand is in A register)
-		IMMEDIATE,       // Immediate addressing mode (operand is a constant)
-		ZERO_PAGE,       // Zero page addressing mode (operand is a memory address in the first 256 bytes of memory)
-		ZERO_PAGE_X,     // Zero page,X addressing mode (operand is a memory address in the first 256 bytes of memory, indexed by X)
-		ZERO_PAGE_Y,     // Zero page,Y addressing mode (operand is a memory address in the first 256 bytes of memory, indexed by Y)
-		RELATIVE,        // Relative addressing mode (operand is a signed 8-bit offset from the program counter)
-		ABSOLUTE,        // Absolute addressing mode (operand is a memory address in the full 64K address space)
-		ABSOLUTE_X,      // Absolute,X addressing mode (operand is a memory address in the full 64K address space, indexed by X)
-		ABSOLUTE_Y,      // Absolute,Y addressing mode (operand is a memory address in the full 64K address space, indexed by Y)
-		INDIRECT,        // Indirect addressing mode (operand is a memory address that contains a memory address)
-		INDIRECT_X,      // Indirect,X addressing mode (operand is a memory address that is used as an index into the zero page)
-		INDIRECT_Y       // Indirect,Y addressing mode (operand is a memory address in the zero page that is indexed by Y)
-	};
+	const uint8_t CARRY_FLAG_MASK = 		0b00000001;
+	const uint8_t ZERO_FLAG_MASK = 			0b00000010;
+	const uint8_t INTERRUPT_DISABLE_MASK = 	0b00000100;
+	const uint8_t DECIMAL_MODE_MASK = 		0b00001000;
+	const uint8_t BREAK_COMMAND_MASK = 		0b00010000;
+	const uint8_t UNUSED_MASK = 			0b00100000;
+	const uint8_t OVERFLOW_FLAG_MASK = 		0b01000000;
+	const uint8_t NEGATIVE_FLAG_MASK =		0b10000000;
 
 	uint8_t regAccumulator = 0;								// (A)
 	uint8_t regX = 0;										// (X)
 	uint8_t regY = 0;										// (Y)
-	uint8_t regStatus = 0;									// (P)
+	uint8_t regStatus = 0;									// (P)		byte = Negative, Overflow, _, Break, Decimal, Interrupt, Zero, Carry
 	uint8_t stackPointer = STACK_POINTER_START;				// (S) Stack is stored top -> bottom ($01FF -> $0100)
 	uint16_t programCounter = 0; 							// (PC)
-	uint16_t addressBus;
-	uint8_t memory[ADDRESS_SPACE_SIZE];						// $0000 -> $FFFF
+	uint8_t* memory;										// pointer to NesSystem memory
+
+
 
 	uint8_t read(uint16_t addr);
+	uint16_t read2Bytes(uint16_t addr);						// Little endian reads low then high then returns reordered ($00 $80 => $8000)
 	void write(uint16_t addr, uint8_t val);
 
+	uint16_t NesCpu::getOperandAddress(AddressingMode mode, int& pageBoundaryCost);
+	bool NesCpu::isPageBoundaryCrossed(uint16_t addr1, uint16_t addr2);
+
 	uint8_t fetch();										// Fetches instruction (opcode) from memory pointed at by PC
-	AddressingMode decode(uint8_t opcode);								// Returns addressing mode of opcode
-	int execute(uint8_t opcode, AddressingMode mode);
-	// Instructions:
-	int adc();      // ADC - add with carry
-	int and();      // AND - and (with accumulator)
-	int asl();      // ASL - arithmetic shift left
-	int bcc();      // BCC - branch on carry clear
-	int bcs();      // BCS - branch on carry set
-	int beq();      // BEQ - branch on equal (zero set)
-	int bit();      // BIT - bit test
-	int bmi();      // BMI - branch on minus (negative set)
-	int bne();      // BNE - branch on not equal (zero clear)
-	int bpl();      // BPL - branch on plus (negative clear)
-	int brk();      // BRK - break / interrupt
-	int bvc();      // BVC - branch on overflow clear
-	int bvs();      // BVS - branch on overflow set
-	int clc();      // CLC - clear carry
-	int cld();      // CLD - clear decimal
-	int cli();      // CLI - clear interrupt disable
-	int clv();      // CLV - clear overflow
-	int cmp();      // CMP - compare (with accumulator)
-	int cpx();      // CPX - compare with X
-	int cpy();      // CPY - compare with Y
-	int dec();      // DEC - decrement
-	int dex();      // DEX - decrement X
-	int dey();      // DEY - decrement Y
-	int eor();      // EOR - exclusive or (with accumulator)
-	int inc();      // INC - increment
-	int inx();      // INX - increment X
-	int iny();      // INY - increment Y
-	int jmp();      // JMP - jump
-	int jsr();      // JSR - jump subroutine
+	int execute(Opcode opcode);		// Returns CPU cycle (step) cost of instruction
+
+
+	// Load/Store Operations
 	int lda();      // LDA - load accumulator
 	int ldx();      // LDX - load X
 	int ldy();      // LDY - load Y
-	int lsr();      // LSR - logical shift right
-	int nop();      // NOP - no operation
-	int ora();      // ORA - or with accumulator
+	int sta();      // STA - store accumulator
+	int stx();      // STX - store X
+	int sty();      // STY - store Y
+
+	// Register Transfers
+	int tax();      // TAX - transfer accumulator to X
+	int tay();      // TAY - transfer accumulator to Y
+	int txa();      // TXA - transfer X to accumulator
+	int tya();      // TYA - transfer Y to accumulator
+
+	// Stack Operations
+	int tsx();      // TSX - transfer stack pointer to X
+	int txs();      // TXS - transfer X to stack pointer
 	int pha();      // PHA - push accumulator
 	int php();      // PHP - push processor status (SR)
 	int pla();      // PLA - pull accumulator
 	int plp();      // PLP - pull processor status (SR)
+
+	// Logical
+	int and();      // AND - and (with accumulator)
+	int eor();      // EOR - exclusive or (with accumulator)
+	int ora();      // ORA - or with accumulator
+	int bit();      // BIT - bit test
+
+	// Arithmetic
+	int adc(uint8_t operand);      // ADC - add with carry
+	int sbc(uint8_t operand);      // SBC - subtract with carry
+	int cmp();      // CMP - compare (with accumulator)
+	int cpx();      // CPX - compare with X
+	int cpy();      // CPY - compare with Y
+
+	// Increments and Decrements
+	int inc();      // INC - increment
+	int inx();      // INX - increment X
+	int iny();      // INY - increment Y
+	int dec();      // DEC - decrement
+	int dex();      // DEX - decrement X
+	int dey();      // DEY - decrement Y
+
+	// Shifts
+	int asl();      // ASL - arithmetic shift left
+	int lsr();      // LSR - logical shift right
 	int rol();      // ROL - rotate left
 	int ror();      // ROR - rotate right
-	int rti();      // RTI - return from interrupt
+
+	// Jumps and Calls
+	int jmp();      // JMP - jump
+	int jsr();      // JSR - jump subroutine
 	int rts();      // RTS - return from subroutine
-	int sbc();      // SBC - subtract with carry
+
+	// Branches
+	int bcc();      // BCC - branch on carry clear
+	int bcs();      // BCS - branch on carry set
+	int beq();      // BEQ - branch on equal (zero set)
+	int bmi();      // BMI - branch on minus (negative set)
+	int bne();      // BNE - branch on not equal (zero clear)
+	int bpl();      // BPL - branch on plus (negative clear)
+	int bvc();      // BVC - branch on overflow clear
+	int bvs();      // BVS - branch on overflow set
+
+	// Status Flag Changes
+	int clc();      // CLC - clear carry
+	int cld();      // CLD - clear decimal
+	int cli();      // CLI - clear interrupt disable
+	int clv();      // CLV - clear overflow
 	int sec();      // SEC - set carry
 	int sed();      // SED - set decimal
 	int sei();      // SEI - set interrupt disable
-	int sta();      // STA - store accumulator
-	int stx();      // STX - store X
-	int sty();      // STY - store Y
-	int tax();      // TAX - transfer accumulator to X
-	int tay();      // TAY - transfer accumulator to Y
-	int tsx();      // TSX - transfer stack pointer to X
-	int txa();      // TXA - transfer X to accumulator
-	int txs();      // TXS - transfer X to stack pointer
-	int tya();      // TYA - transfer Y to accumulator
+
+	// System Functions
+	int brk();      // BRK - break / interrupt
+	int nop();      // NOP - no operation
+	int rti();      // RTI - return from interrupt
+
+	// Status Flag operations
+	void setCarryFlag(bool flag);
+	bool isCarryFlag();
+	void setZeroFlag(bool flag);
+	bool isZeroFlag();
+	void setInterruptDisable(bool flag);
+	bool isInterruptDisable();
+	void setDecimalMode(bool flag);
+	bool isDecimalMode();
+	void setBreakCommand(bool flag);
+	bool isBreakCommand();
+	void setOverflowFlag(bool flag);
+	bool isOverflowFlag();
+	void setNegativeFlag(bool flag);
+	bool isNegativeFlag();
+	
 
 public:
-	NesCpu();
+	NesCpu(uint8_t* memory);
 	~NesCpu();
 
 	void step();
