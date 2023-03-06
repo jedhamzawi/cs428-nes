@@ -5,6 +5,9 @@ CMakeLists.txt
 # Prerequisites
 *.d
 
+#testing files
+*.nes
+
 # Object files
 *.o
 *.ko
@@ -25,6 +28,9 @@ CMakeLists.txt
 *.a
 *.la
 *.lo
+
+#vscode config
+*.vscode
 
 # Shared objects (inc. Windows DLLs)
 *.dll
