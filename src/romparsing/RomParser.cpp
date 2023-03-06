@@ -59,6 +59,8 @@ Rom* RomParser::parseROM(const std::string &filePath) {
 
 
         //this->romHeader.printHeaderInformation();
+        // TODO: Remove demo or log
+        std::cout << "BEGIN PARSING PRG ROMS" << std::endl;
         std::array<std::array<uint8_t, PRG_ROM_SIZE>, MAX_ROM_BANKS> programROMS{}; //This is an array of all the program rom stored as single bytes.
         //This loop is where we need to store all of the PRG-ROM data into banks
         for (int x = 0; x < romHeader.getNumPrgRom(); x++) {
@@ -68,7 +70,7 @@ Rom* RomParser::parseROM(const std::string &filePath) {
                 std::bitset<8> bits(byte);
 
                 // TODO: Remove demo or log
-                //std::cout << bits.to_string() << " " << std::endl;
+                std::cout << bits.to_string() << " " << std::endl;
             }
         }
         // TODO: Remove demo or log
@@ -76,6 +78,8 @@ Rom* RomParser::parseROM(const std::string &filePath) {
 
 
         //This loop is where we need to store all of the CHR-ROM data into banks
+        // TODO: Remove demo or log
+        std::cout << "BEGIN PARSING CHR ROMS" << std::endl;
         std::array<std::array<uint8_t, PRG_ROM_SIZE>, MAX_ROM_BANKS> characterROMS{};
         for (int x = 0; x < romHeader.getNumChrRom(); x++) {
             for (int y = 0; y < CHR_ROM_SIZE; y++)
