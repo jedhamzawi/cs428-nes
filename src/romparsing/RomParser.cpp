@@ -7,13 +7,6 @@
 //#include "Opcode.h"
 //#include "OpcodeTable.h"
 
-
-RomParser::RomParser()
-{
-
-}
-
-
 /*
  * This function does pretty much all the work of reading in NES ROM files and interpreting them into a usable state
  *
@@ -23,10 +16,8 @@ RomParser::RomParser()
  * When I better understand how we are actually storing opcodes I can update this to match.
  *
  */
-Rom* RomParser::parseROM(std::string fileName)
-{
-    std::string filename = fileName; // Replace with your file name
-    std::ifstream infile(filename, std::ios::binary);
+Rom* RomParser::parseROM(const std::string &filePath) {
+    std::ifstream infile(filePath, std::ios::binary);
 
     if (infile) {
         char byte;
@@ -34,31 +25,30 @@ Rom* RomParser::parseROM(std::string fileName)
         //BEGIN HEADER READ IN
         //read the first three bytes in as chars
         char nesIDENT[3];
-        for (int x = 0; x < 3; x++)
-        {
+        for (char & x : nesIDENT) {
             infile.get(byte);
             // TODO: Remove demo or log
             std::cout << byte << std::endl; //check that these first three are the right chars for testing purposes
-            nesIDENT[x] = byte;
+            x = byte;
         }
 
         //read in the "1A" hex code
         infile.get(byte);
-        uint8_t fileFormatIdent = static_cast<uint8_t>(byte);//cast this into a useful format
+        auto fileFormatIdent = static_cast<uint8_t>(byte);//cast this into a useful format
 
         //just pull in the rom numbers and turn them into ints for processing
         infile.get(byte);
-        uint8_t numPrgRom = static_cast<uint8_t>(byte);
+        auto numPrgRom = static_cast<uint8_t>(byte);
         infile.get(byte);
-        uint8_t numChrRom = static_cast<uint8_t>(byte);
+        auto numChrRom = static_cast<uint8_t>(byte);
         infile.get(byte);
-        uint8_t  romControlOne = static_cast<uint8_t>(byte);
+        auto  romControlOne = static_cast<uint8_t>(byte);
         infile.get(byte);
-        uint8_t  romControlTwo = static_cast<uint8_t>(byte);
+        auto  romControlTwo = static_cast<uint8_t>(byte);
         infile.get(byte);
-        uint8_t numRAM = static_cast<uint8_t>(byte);
+        auto numRAM = static_cast<uint8_t>(byte);
 
-        INESHeader romHeader = INESHeader(nesIDENT, fileFormatIdent, numPrgRom, numChrRom, romControlOne, romControlTwo, numRAM, NULL);
+        INESHeader romHeader = INESHeader(nesIDENT, fileFormatIdent, numPrgRom, numChrRom, romControlOne, romControlTwo, numRAM, nullptr);
 
         //we should read in the trainer data just in case
         for (int i = 0; i < 7; i++)
@@ -71,10 +61,8 @@ Rom* RomParser::parseROM(std::string fileName)
         //this->romHeader.printHeaderInformation();
         std::array<std::array<uint8_t, PRG_ROM_SIZE>, MAX_ROM_BANKS> programROMS{}; //This is an array of all the program rom stored as single bytes.
         //This loop is where we need to store all of the PRG-ROM data into banks
-        for (int x = 0; x < romHeader.getNumPrgRom(); x++)
-        {
-            for (int y = 0; y < PRG_ROM_SIZE; y++)
-            {
+        for (int x = 0; x < romHeader.getNumPrgRom(); x++) {
+            for (int y = 0; y < PRG_ROM_SIZE; y++) {
                 infile.get(byte);
                 programROMS[x][y] = static_cast<uint8_t>(byte);
                 std::bitset<8> bits(byte);
@@ -89,8 +77,7 @@ Rom* RomParser::parseROM(std::string fileName)
 
         //This loop is where we need to store all of the CHR-ROM data into banks
         std::array<std::array<uint8_t, PRG_ROM_SIZE>, MAX_ROM_BANKS> characterROMS{};
-        for (int x = 0; x < romHeader.getNumChrRom(); x++)
-        {
+        for (int x = 0; x < romHeader.getNumChrRom(); x++) {
             for (int y = 0; y < CHR_ROM_SIZE; y++)
             {
                 infile.get(byte);
@@ -105,8 +92,7 @@ Rom* RomParser::parseROM(std::string fileName)
 
 
         //Cleaning up any additonal data for the time being
-        while (infile.get(byte))
-        {
+        while (infile.get(byte)) {
             std::bitset<8> bits(byte);
 
             std::cout << bits.to_string() << " " << std::endl;
@@ -117,10 +103,7 @@ Rom* RomParser::parseROM(std::string fileName)
     }
     else {
         // TODO: Log
-        std::cerr << "Unable to open file: " << filename << std::endl;
+        std::cerr << "Unable to open file: " << filePath << std::endl;
         return nullptr;
     }
-
-    return nullptr;
-
 }

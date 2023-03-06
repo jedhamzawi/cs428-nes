@@ -37,7 +37,7 @@ private:
 	bool isPageBoundaryCrossed(uint16_t addr1, uint16_t addr2);
 
 	uint8_t fetch();										// Fetches instruction (opcode) from memory pointed at by PC
-	int execute(Opcode opcode);		// Returns CPU cycle (step) cost of instruction
+	int execute(const Opcode &opcode);		// Returns CPU cycle (step) cost of instruction
 
 
 	// Load/Store Operations

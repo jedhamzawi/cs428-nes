@@ -4,8 +4,7 @@
 
 
 //This enum maps the number of the mapper type that is stored in the iNES format (*.nes) for use in bank switching (games larger than 32KB)
-enum mapper
-{
+enum mapper {
     NROM = 0,
     MMC1 = 1,
     UNROM = 2,
@@ -42,13 +41,11 @@ enum mapper
     CAMERICA = 71,
     IREM_74HC161 = 78,
     HK_SF3_PIRATE = 91
-
 };
 
 
 
-class INESHeader
-{
+class INESHeader {
     private:
         //raw variables (straight from the source ROM)
         char nesString[3]; //This is a three character idetnifier that simply has "NES" to identify it as an iNES file
@@ -79,11 +76,8 @@ class INESHeader
         uint8_t reservedBuffer[7]; //reserved for future usage and should all be 0
 
 
-
         //derived variables
         mapper headerMapper; // This variable is used to store the mapper type found in the header
-
-
 
     public:
 
@@ -114,6 +108,5 @@ class INESHeader
     const uint8_t *getReservedBuffer() const;
 
     mapper getHeaderMapper() const;
-
 
 };

@@ -4,7 +4,7 @@
 
 NesCpu::NesCpu(uint8_t* memory): memory(memory){}
 
-NesCpu::~NesCpu() {}
+NesCpu::~NesCpu() = default;
 
 void NesCpu::step() {
     // Check if starting instruction
@@ -50,7 +50,7 @@ uint8_t NesCpu::fetch() {
 
 // ======================== INSTRUCTIONS ======================== //
 
-int NesCpu::execute(Opcode opcode) {
+int NesCpu::execute(const Opcode &opcode) {
 
     int pageBoundaryCost = 0;
     uint16_t operandAddress = getOperandAddress(opcode.getAddressingMode(), pageBoundaryCost); 
