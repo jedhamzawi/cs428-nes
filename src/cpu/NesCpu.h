@@ -27,7 +27,6 @@ private:
 	uint8_t stackPointer = STACK_POINTER_START;				// (S) Stack is stored top -> bottom ($01FF -> $0100)
 	uint16_t programCounter = 0; 							// (PC)
     uint16_t programCounterOffset = 0;                         // Amount to increment program counter at end of cycle
-    bool jumpFlag = false;                                  // True if last instruction jump/call/return
 	uint8_t* memory;										// pointer to NesSystem memory
 
 

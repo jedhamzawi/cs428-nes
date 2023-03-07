@@ -26,7 +26,14 @@ void NesCpu::step() {
 
         // Set internal clock to instruction's step cost
         this->clock += instructionCost;
-        incrementProgramCounter();
+
+        // If instruction may have manipulated PC, do not increment.
+        // It is that instruction's responsibility to put the PC
+        // in the correct location.
+        if (!instruction.getOpcode().manipsPC) {
+            incrementProgramCounter();
+        }
+        this->programCounterOffset = 0;
     }
     // Wait until instruction's step cost is paid
     this->clock--;
@@ -146,7 +153,7 @@ uint16_t NesCpu::getOperandAddress(AddressingMode mode, short& pageBoundaryCost)
             
             break;
         case AddressingMode::ZERO_PAGE:
-            address = read(addrLoc);   // Casted uint8_t to uint16_t which is like byte $xx + zero page $0000 = $00xx
+            address = read(addrLoc);   // Cast uint8_t to uint16_t which is like byte $xx + zero page $0000 = $00xx
             this->programCounterOffset++;
             break;
         case AddressingMode::ZERO_PAGE_X:
@@ -285,5 +292,4 @@ void NesCpu::initProgramCounter() {
 
 void NesCpu::incrementProgramCounter() {
     this->programCounter += this->programCounterOffset;
-    this->programCounterOffset = 0;
 }
