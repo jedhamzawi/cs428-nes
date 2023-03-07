@@ -1,6 +1,5 @@
 #pragma once
 #include <string>
-#include <unordered_set>
 
 #include "AddressingMode.h"
 
@@ -11,7 +10,7 @@ private:
     uint8_t bytes;
     uint8_t cycles;
 public:
-    Opcode(std::string  mnemonic, AddressingMode mode, uint8_t bytes, uint8_t cycles);
+    Opcode(std::string mnemonic, AddressingMode mode, uint8_t bytes, uint8_t cycles);
 
     std::string getMnemonic() const;
     AddressingMode getAddressingMode() const;
