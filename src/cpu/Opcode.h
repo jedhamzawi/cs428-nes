@@ -6,17 +6,12 @@
 
 class Opcode {
 private:
-    // The set of OpCodes that manipulate the program counter
-    static const std::unordered_set<std::string> pcOpCodes;
-
     std::string mnemonic;
     AddressingMode mode;
     uint8_t bytes;
     uint8_t cycles;
 public:
-    Opcode(const std::string& mnemonic, AddressingMode mode, uint8_t bytes, uint8_t cycles);
-
-    const bool manipsPC;
+    Opcode(std::string  mnemonic, AddressingMode mode, uint8_t bytes, uint8_t cycles);
 
     std::string getMnemonic() const;
     AddressingMode getAddressingMode() const;

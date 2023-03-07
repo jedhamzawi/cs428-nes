@@ -26,7 +26,6 @@ private:
 	uint8_t regStatus = 0;									// (P)		byte = Negative, Overflow, _, Break, Decimal, Interrupt, Zero, Carry
 	uint8_t stackPointer = STACK_POINTER_START;				// (S) Stack is stored top -> bottom ($01FF -> $0100)
 	uint16_t programCounter = 0; 							// (PC)
-    uint16_t programCounterOffset = 0;                         // Amount to increment program counter at end of cycle
 	uint8_t* memory;										// pointer to NesSystem memory
 
 
@@ -37,7 +36,6 @@ private:
 
 	uint16_t getOperandAddress(AddressingMode mode, short& pageBoundaryCost);
 	bool isPageBoundaryCrossed(uint16_t addr1, uint16_t addr2);
-    void incrementProgramCounter();
 
 	Instruction fetch();										// Fetches instruction (opcode) from memory pointed at by PC
 	int execute(const Instruction &instruction);		// Returns CPU cycle (step) cost of instruction
