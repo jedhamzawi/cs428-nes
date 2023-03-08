@@ -1,5 +1,5 @@
 #pragma once
-#include "NesCpu.h"
+#include "cpu/NesCpu.h"
 #include "NesPpu.h"
 #include "NesApu.h"
 #include "Rom.h"

@@ -4,8 +4,7 @@
 #include <array>
 
 #include "RomParser.h"
-//#include "Opcode.h"
-//#include "OpcodeTable.h"
+
 
 /*
  * This function does pretty much all the work of reading in NES ROM files and interpreting them into a usable state
@@ -13,19 +12,21 @@
  * All information about header data can be found in the INESHeader.h file
  * after reading in the header the parser currently just goes in and assigns the program roms and character roms as
  * 2d arrays, with the first value representing the rom number and the second the byte.
- * When I better understand how we are actually storing opcodes I can update this to match.
  *
  */
-Rom* RomParser::parseROM(const std::string &filePath) {
+Rom* RomParser::parseROM(const std::string &filePath)
+{
     std::ifstream infile(filePath, std::ios::binary);
 
-    if (infile) {
+    if (infile)
+    {
         char byte;
 
         //BEGIN HEADER READ IN
         //read the first three bytes in as chars
         char nesIDENT[3];
-        for (char & x : nesIDENT) {
+        for (char & x : nesIDENT)
+        {
             infile.get(byte);
             // TODO: Remove demo or log
             std::cout << byte << std::endl; //check that these first three are the right chars for testing purposes
@@ -63,8 +64,10 @@ Rom* RomParser::parseROM(const std::string &filePath) {
         std::cout << "BEGIN PARSING PRG ROMS" << std::endl;
         std::array<std::array<uint8_t, PRG_ROM_SIZE>, MAX_ROM_BANKS> programROMS{}; //This is an array of all the program rom stored as single bytes.
         //This loop is where we need to store all of the PRG-ROM data into banks
-        for (int x = 0; x < romHeader.getNumPrgRom(); x++) {
-            for (int y = 0; y < PRG_ROM_SIZE; y++) {
+        for (int x = 0; x < romHeader.getNumPrgRom(); x++)
+        {
+            for (int y = 0; y < PRG_ROM_SIZE; y++)
+            {
                 infile.get(byte);
                 programROMS[x][y] = static_cast<uint8_t>(byte);
                 std::bitset<8> bits(byte);
@@ -81,7 +84,8 @@ Rom* RomParser::parseROM(const std::string &filePath) {
         // TODO: Remove demo or log
         std::cout << "BEGIN PARSING CHR ROMS" << std::endl;
         std::array<std::array<uint8_t, PRG_ROM_SIZE>, MAX_ROM_BANKS> characterROMS{};
-        for (int x = 0; x < romHeader.getNumChrRom(); x++) {
+        for (int x = 0; x < romHeader.getNumChrRom(); x++)
+        {
             for (int y = 0; y < CHR_ROM_SIZE; y++)
             {
                 infile.get(byte);
@@ -96,7 +100,8 @@ Rom* RomParser::parseROM(const std::string &filePath) {
 
 
         //Cleaning up any additonal data for the time being
-        while (infile.get(byte)) {
+        while (infile.get(byte))
+        {
             std::bitset<8> bits(byte);
 
             std::cout << bits.to_string() << " " << std::endl;
@@ -105,9 +110,15 @@ Rom* RomParser::parseROM(const std::string &filePath) {
 
         return new Rom(romHeader, programROMS, characterROMS);
     }
-    else {
+    else
+    {
         // TODO: Log
         std::cerr << "Unable to open file: " << filePath << std::endl;
         return nullptr;
     }
+}
+
+RomParser::RomParser()
+{
+
 }
