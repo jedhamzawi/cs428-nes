@@ -4,6 +4,7 @@
 #include <string>
 #include "AbstractClockable.h"
 #include "OpcodeTable.h"
+#include "Instruction.h"
 
 
 // NOTE: The 6502 is little endian, the least significant byte comes first
@@ -33,11 +34,11 @@ private:
 	uint16_t read2Bytes(uint16_t addr);						// Little endian reads low then high then returns reordered ($00 $80 => $8000)
 	void write(uint16_t addr, uint8_t val);
 
-	uint16_t getOperandAddress(AddressingMode mode, int& pageBoundaryCost);
+	uint16_t getOperandAddress(AddressingMode mode, short& pageBoundaryCost);
 	bool isPageBoundaryCrossed(uint16_t addr1, uint16_t addr2);
 
-	uint8_t fetch();										// Fetches instruction (opcode) from memory pointed at by PC
-	int execute(const Opcode &opcode);		// Returns CPU cycle (step) cost of instruction
+	Instruction fetch();										// Fetches instruction (opcode) from memory pointed at by PC
+	int execute(const Instruction &instruction);		// Returns CPU cycle (step) cost of instruction
 
 
 	// Load/Store Operations

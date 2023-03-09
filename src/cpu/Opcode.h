@@ -1,9 +1,14 @@
 #pragma once
-
 #include <string>
+
 #include "AddressingMode.h"
 
 class Opcode {
+private:
+    std::string mnemonic;
+    AddressingMode mode;
+    uint8_t bytes;
+    uint8_t cycles;
 public:
     Opcode(std::string mnemonic, AddressingMode mode, uint8_t bytes, uint8_t cycles);
 
@@ -11,10 +16,4 @@ public:
     AddressingMode getAddressingMode() const;
     uint8_t getBytes() const;
     uint8_t getCycles() const;
-
-private:
-    std::string mnemonic;
-    AddressingMode mode;
-    uint8_t bytes;
-    uint8_t cycles;
 };

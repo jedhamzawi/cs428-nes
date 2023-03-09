@@ -15,10 +15,10 @@ private:
 public:
     Rom(INESHeader header,
         std::array<std::array<uint8_t, PRG_ROM_SIZE>, MAX_ROM_BANKS> programROMS,
-        std::array<std::array<uint8_t, PRG_ROM_SIZE>, MAX_ROM_BANKS> characterROMS):
-        header(header),
-        programROMS(programROMS),
-        characterROMS(characterROMS) {}
+        std::array<std::array<uint8_t, PRG_ROM_SIZE>, MAX_ROM_BANKS> characterROMS)
+        : header(header)
+        , programROMS(programROMS)
+        , characterROMS(characterROMS) {}
 
     const INESHeader &getHeader() const {
         return header;
