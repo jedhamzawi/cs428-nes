@@ -10,25 +10,30 @@ const int MAX_ROM_BANKS = 32;
 class Rom {
 private:
     INESHeader header;
-    std::array<std::array<uint8_t, PRG_ROM_SIZE>, MAX_ROM_BANKS> programROMS;
-    std::array<std::array<uint8_t, PRG_ROM_SIZE>, MAX_ROM_BANKS> characterROMS;
+    std::array<std::array<uint8_t, PRG_ROM_SIZE>, MAX_ROM_BANKS> *programROMS;
+    std::array<std::array<uint8_t, PRG_ROM_SIZE>, MAX_ROM_BANKS> *characterROMS;
 public:
     Rom(INESHeader header,
-        std::array<std::array<uint8_t, PRG_ROM_SIZE>, MAX_ROM_BANKS> programROMS,
-        std::array<std::array<uint8_t, PRG_ROM_SIZE>, MAX_ROM_BANKS> characterROMS)
+        std::array<std::array<uint8_t, PRG_ROM_SIZE>, MAX_ROM_BANKS> *programROMS,
+        std::array<std::array<uint8_t, PRG_ROM_SIZE>, MAX_ROM_BANKS> *characterROMS)
         : header(header)
         , programROMS(programROMS)
         , characterROMS(characterROMS) {}
+
+    ~Rom() {
+        delete this->programROMS;
+        delete this->characterROMS;
+    }
 
     const INESHeader &getHeader() const {
         return header;
     }
 
-    const std::array<std::array<uint8_t, PRG_ROM_SIZE>, MAX_ROM_BANKS> &getProgramRoms() const {
+    const std::array<std::array<uint8_t, PRG_ROM_SIZE>, MAX_ROM_BANKS> *getProgramRoms() const {
         return programROMS;
     }
 
-    const std::array<std::array<uint8_t, PRG_ROM_SIZE>, MAX_ROM_BANKS> &getCharacterRoms() const {
+    const std::array<std::array<uint8_t, PRG_ROM_SIZE>, MAX_ROM_BANKS> *getCharacterRoms() const {
         return characterROMS;
     }
 };

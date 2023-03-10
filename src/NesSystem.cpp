@@ -20,12 +20,12 @@ void NesSystem::loadRom(Rom *rom) {
     // TODO: Load all initial memory from ROM for startup (like PRG-ROM below)
 
     // Fill PRG-ROM starting at #8000
-    std::copy(std::begin(rom->getProgramRoms()[0]), std::end(rom->getProgramRoms()[0]), &memory[0x8000]);
+    std::copy(std::begin(rom->getProgramRoms()->at(0)), std::end(rom->getProgramRoms()->at(0)), &memory[0x8000]);
     if (rom->getHeader().getNumPrgRom() > 1) {
-        std::copy(std::begin(rom->getProgramRoms()[1]), std::end(rom->getProgramRoms()[1]), &memory[0xC000]);
+        std::copy(std::begin(rom->getProgramRoms()->at(1)), std::end(rom->getProgramRoms()->at(1)), &memory[0xC000]);
     }
     else {
-        std::copy(std::begin(rom->getProgramRoms()[0]), std::end(rom->getProgramRoms()[0]), &memory[0xC000]);
+        std::copy(std::begin(rom->getProgramRoms()->at(0)), std::end(rom->getProgramRoms()->at(0)), &memory[0xC000]);
     }
 }
 
