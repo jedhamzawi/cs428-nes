@@ -15,7 +15,7 @@ int main(int argc, char **argv) {
     std::string romPath = argv[1];
 
     NesSystem nesSystem;
-    RomParser parser = RomParser();
+    RomParser parser;
 
     Rom *rom = parser.parseROM(romPath);
     if (rom == nullptr) {
