@@ -31,23 +31,6 @@ void NesCpu::step() {
     this->clock--;
 }
 
-
-// ======================== HELPERS ======================== //
-
-uint8_t NesCpu::read(uint16_t addr) {
-    return memory[addr];
-}
-
-uint16_t NesCpu::read2Bytes(uint16_t addr) {
-    uint16_t lowByte = read(addr);
-    uint16_t highByte = read(addr + 1);
-    return (highByte << 8) | lowByte;
-}
-
-void NesCpu::write(uint16_t addr, uint8_t val) {
-    memory[addr] = val;
-}
-
 Instruction NesCpu::fetch() {
     uint8_t opcodeByte = read(this->programCounter);
     Opcode opcode = OpcodeTable::getOpcode(opcodeByte);
@@ -58,9 +41,6 @@ Instruction NesCpu::fetch() {
 
     return {opcode, operand, pageBoundaryCost};
 }
-
-
-// ======================== INSTRUCTIONS ======================== //
 
 int NesCpu::execute(const Instruction &instruction) {
     // TODO: IMPORTANT, move PC in each instruction
@@ -87,18 +67,22 @@ int NesCpu::execute(const Instruction &instruction) {
     return instruction.getOpcode().getCycles() + instruction.getPageBoundaryCost();
 }
 
-int NesCpu::adc(uint8_t operand) {
-    uint16_t result = (uint16_t)this->regAccumulator + (uint16_t)operand + (uint16_t)isCarryFlag();
-    this->regAccumulator = (uint8_t)result;
 
-    setCarryFlag(result > 0xFF);
-    setZeroFlag((result & 0xFF) == 0);
-    setOverflowFlag((~((uint16_t)this->regAccumulator ^ (uint16_t)operand) & ((uint16_t)this->regAccumulator ^ (uint16_t)result) & 0x80) != 0);
-    setNegativeFlag((result & 0x80) != 0);
+// ======================== INSTRUCTIONS ======================== //
+
+int NesCpu::adc(uint8_t operand) {
+    uint16_t result = this->regAccumulator + operand + isCarryFlag();
+   
+    this->flags.setCarryFlag(result > 0xFF);
+    this->flags.setZeroFlag((result & 0xFF) == 0);
+    this->flags.setOverflowFlag(hasOverflow(this->regAccumulator, operand, result));
+    this->flags.setNegativeFlag(result & 0x80);
+
+    this->regAccumulator = (uint8_t)result;
 }
 
 int NesCpu::sbc(uint8_t operand) {
-    
+    adc(~operand);      // A - B = A + (-B)
 }
 
 
@@ -107,22 +91,26 @@ int NesCpu::sbc(uint8_t operand) {
 
 // ======================== ADDRESSING MODES ======================== //
 
-// TODO: handle page crossing when modes like zero page x or absolute y wrap addresses??
 uint16_t NesCpu::getOperandAddress(AddressingMode mode, short& pageBoundaryCost) {
-    uint16_t addressInstrVal = this->programCounter + 1; // Address value/location given in instruction
+    uint16_t addressOfInstructionValue = this->programCounter + 1;    // Address of value after opcode
     uint16_t address = 0;
+
     uint16_t absoluteAddress;
     uint8_t zeroPageAddress;
     uint16_t indirectAddress;
     switch (mode) {
+        case AddressingMode::IMPLIED:
+            // TODO: maybe fix how we handle getting operands, because implicit doesn't need one
+            //       but it will set operand to value at address 0 by default.
+            break;
         case AddressingMode::IMMEDIATE:
-            address = addressInstrVal;
+            address = addressOfInstructionValue;
             break;
         case AddressingMode::ABSOLUTE:
-            address = read2Bytes(addressInstrVal);
+            address = read2Bytes(addressOfInstructionValue);
             break;
         case AddressingMode::ABSOLUTE_X:
-            absoluteAddress = read2Bytes(addressInstrVal);
+            absoluteAddress = read2Bytes(addressOfInstructionValue);
             address = absoluteAddress + this->regX;
 
             if (this->isPageBoundaryCrossed(absoluteAddress, address)) {
@@ -131,7 +119,7 @@ uint16_t NesCpu::getOperandAddress(AddressingMode mode, short& pageBoundaryCost)
 
             break;
         case AddressingMode::ABSOLUTE_Y:
-            absoluteAddress = read2Bytes(addressInstrVal);
+            absoluteAddress = read2Bytes(addressOfInstructionValue);
             address = absoluteAddress + this->regY;
             
             if (this->isPageBoundaryCrossed(absoluteAddress, address)) {
@@ -140,23 +128,23 @@ uint16_t NesCpu::getOperandAddress(AddressingMode mode, short& pageBoundaryCost)
             
             break;
         case AddressingMode::ZERO_PAGE:
-            address = read(addressInstrVal);   // Cast uint8_t to uint16_t which is like byte $xx + zero page $0000 = $00xx
+            address = read(addressOfInstructionValue);   // Cast uint8_t to uint16_t which is like byte $xx + zero page $0000 = $00xx
             break;
         case AddressingMode::ZERO_PAGE_X:
-            zeroPageAddress = read(addressInstrVal);
+            zeroPageAddress = read(addressOfInstructionValue);
             address = (uint8_t)(zeroPageAddress + this->regX);   // uint8_t handles the wrapping before uint16_t assignment
             break;
         case AddressingMode::ZERO_PAGE_Y:
-            zeroPageAddress = read(addressInstrVal);
+            zeroPageAddress = read(addressOfInstructionValue);
             address = (uint8_t)(zeroPageAddress + this->regY);   // uint8_t handles the wrapping before uint16_t assignment
             break;
         case AddressingMode::INDIRECT_X:
-            zeroPageAddress = read(addressInstrVal);
+            zeroPageAddress = read(addressOfInstructionValue);
             indirectAddress = (uint8_t)(zeroPageAddress + this->regX);   // uint8_t handles the wrapping before uint16_t assignment
             address = read2Bytes(indirectAddress);
             break;
         case AddressingMode::INDIRECT_Y:
-            zeroPageAddress = read(addressInstrVal);
+            zeroPageAddress = read(addressOfInstructionValue);
             indirectAddress = read2Bytes(zeroPageAddress);
             address = indirectAddress + regY;
 
@@ -165,109 +153,42 @@ uint16_t NesCpu::getOperandAddress(AddressingMode mode, short& pageBoundaryCost)
             }
             break;
         default:
-        // TODO: error handling
+            // TODO: error handling
             break;
     }
     return address;
 }
 
-bool isPageBoundaryCrossed(uint16_t addr1, uint16_t addr2) {    // Comparing the high byte of old and new address
+
+// ======================== HELPERS ======================== //
+
+bool NesCpu::isPageBoundaryCrossed(uint16_t addr1, uint16_t addr2) {    
+    // Comparing the high byte of old and new address
     return (addr1 & 0xFF00) != (addr2 & 0xFF00);
 }
 
-
-// ======================== STATUS FLAGS ======================== //
-
-void NesCpu::setCarryFlag(bool flag) {
-    if (flag) {
-        regStatus |= CARRY_FLAG_MASK;
-    } else {
-        regStatus &= ~CARRY_FLAG_MASK;
-    }
+bool NesCpu::hasOverflow(uint8_t input1, uint8_t input2, uint8_t result) {
+    bool input1Negative = input1 & 0x80;
+    bool input2Negative = input2 & 0x80;
+    bool resultNegative = result & 0x80;
+    return (input1Negative == input2Negative) && (input1Negative != resultNegative);
 }
 
-bool NesCpu::isCarryFlag() {
-    return (regStatus & CARRY_FLAG_MASK) != 0;
-}
-
-void NesCpu::setZeroFlag(bool flag) {
-    if (flag) {
-        regStatus |= ZERO_FLAG_MASK;
-    } else {
-        regStatus &= ~ZERO_FLAG_MASK;
-    }
-}
-
-bool NesCpu::isZeroFlag() {
-    return (regStatus & ZERO_FLAG_MASK) != 0;
-}
-
-void NesCpu::setInterruptDisable(bool flag) {
-    if (flag) {
-        regStatus |= INTERRUPT_DISABLE_MASK;
-    } else {
-        regStatus &= ~INTERRUPT_DISABLE_MASK;
-    }
-}
-
-bool NesCpu::isInterruptDisable() {
-    return (regStatus & INTERRUPT_DISABLE_MASK) != 0;
-}
-
-void NesCpu::setDecimalMode(bool flag) {
-    if (flag) {
-        regStatus |= DECIMAL_MODE_MASK;
-    } else {
-        regStatus &= ~DECIMAL_MODE_MASK;
-    }
-}
-
-bool NesCpu::isDecimalMode() {
-    return (regStatus & DECIMAL_MODE_MASK) != 0;
-}
-
-void NesCpu::setBreakCommand(bool flag) {
-    if (flag) {
-        regStatus |= BREAK_COMMAND_MASK;
-    } else {
-        regStatus &= ~BREAK_COMMAND_MASK;
-    }
-}
-
-bool NesCpu::isBreakCommand() {
-    return (regStatus & BREAK_COMMAND_MASK) != 0;
-}
-
-void NesCpu::setOverflowFlag(bool flag) {
-    if (flag) {
-        regStatus |= OVERFLOW_FLAG_MASK;
-    } else {
-        regStatus &= ~OVERFLOW_FLAG_MASK;
-    }
-}
-
-bool NesCpu::isOverflowFlag() {
-    return (regStatus & OVERFLOW_FLAG_MASK) != 0;
-}
-
-void NesCpu::setNegativeFlag(bool flag) {
-    if (flag) {
-        regStatus |= NEGATIVE_FLAG_MASK;
-    } else {
-        regStatus &= ~NEGATIVE_FLAG_MASK;
-    }
-}
-
-bool NesCpu::isNegativeFlag() {
-    return (regStatus & NEGATIVE_FLAG_MASK) != 0;
-}
-
-// TODO: Implement
-bool NesCpu::isPageBoundaryCrossed(uint16_t addr1, uint16_t addr2) {
-    return false;
-}
-
-// Set program start location based on RESET vector
 void NesCpu::initProgramCounter() {
+    // Set program start location based on RESET vector
     programCounter = memory[0xFFFD] * 256 + memory[0xFFFC];
+}
+
+uint8_t NesCpu::read(uint16_t addr) {
+    return memory[addr];
+}
+
+uint16_t NesCpu::read2Bytes(uint16_t addr) {
+    uint16_t lowByte = read(addr);
+    uint16_t highByte = read(addr + 1);
+    return (highByte << 8) | lowByte;
+}
+
+void NesCpu::write(uint16_t addr, uint8_t val) {
+    memory[addr] = val;
 }

@@ -5,30 +5,25 @@
 #include "AbstractClockable.h"
 #include "OpcodeTable.h"
 #include "Instruction.h"
+#include "StatusFlags.h"
 
 
 // NOTE: The 6502 is little endian, the least significant byte comes first
 class NesCpu : public AbstractClockable {
 private:
 	static constexpr uint8_t STACK_POINTER_START = 0xFD;  	// Check documentation, should be $FF, but power-on/reset decrements 3?
-	const uint8_t CARRY_FLAG_MASK = 		0b00000001;
-	const uint8_t ZERO_FLAG_MASK = 			0b00000010;
-	const uint8_t INTERRUPT_DISABLE_MASK = 	0b00000100;
-	const uint8_t DECIMAL_MODE_MASK = 		0b00001000;
-	const uint8_t BREAK_COMMAND_MASK = 		0b00010000;
-	const uint8_t UNUSED_MASK = 			0b00100000;
-	const uint8_t OVERFLOW_FLAG_MASK = 		0b01000000;
-	const uint8_t NEGATIVE_FLAG_MASK =		0b10000000;
 
 	uint8_t regAccumulator = 0;								// (A)
 	uint8_t regX = 0;										// (X)
 	uint8_t regY = 0;										// (Y)
 	uint8_t regStatus = 0;									// (P)		byte = Negative, Overflow, _, Break, Decimal, Interrupt, Zero, Carry
+	StatusFlags flags;
 	uint8_t stackPointer = STACK_POINTER_START;				// (S) Stack is stored top -> bottom ($01FF -> $0100)
 	uint16_t programCounter = 0; 							// (PC)
 	uint8_t* memory;										// pointer to NesSystem memory
 
-
+	Instruction fetch();									// Fetches instruction (opcode) from memory pointed at by PC
+	int execute(const Instruction &instruction);			// Returns CPU cycle (step) cost of instruction
 
 	uint8_t read(uint16_t addr);
 	uint16_t read2Bytes(uint16_t addr);						// Little endian reads low then high then returns reordered ($00 $80 => $8000)
@@ -36,9 +31,7 @@ private:
 
 	uint16_t getOperandAddress(AddressingMode mode, short& pageBoundaryCost);
 	bool isPageBoundaryCrossed(uint16_t addr1, uint16_t addr2);
-
-	Instruction fetch();										// Fetches instruction (opcode) from memory pointed at by PC
-	int execute(const Instruction &instruction);		// Returns CPU cycle (step) cost of instruction
+	bool NesCpu::hasOverflow(uint8_t input1, uint8_t input2, uint8_t result);
 
 
 	// Load/Store Operations
@@ -135,7 +128,6 @@ private:
 	void setNegativeFlag(bool flag);
 	bool isNegativeFlag();
 	
-
 public:
 	NesCpu(uint8_t* memory);
 	~NesCpu();
