@@ -26,9 +26,11 @@ private:
 	int execute(const Instruction &instruction);			// Returns CPU cycle (step) cost of instruction
 
 	uint8_t read(uint16_t addr);
-	uint16_t read2Bytes(uint16_t addr);						// Little endian reads low then high then returns reordered ($00 $80 => $8000)
+	uint16_t readWordToBigEndian(uint16_t addr);			// Reads low then high and returns reordered ($00 $80 => $8000)
 	void write(uint16_t addr, uint8_t val);
+	void writeWordToLittleEndian(uint16_t addr, uint16_t val);
 
+	uint8_t NesCpu::getOperand(AddressingMode mode, short& pageBoundaryCost);
 	uint16_t getOperandAddress(AddressingMode mode, short& pageBoundaryCost);
 	bool isPageBoundaryCrossed(uint16_t addr1, uint16_t addr2);
 	bool NesCpu::hasOverflow(uint8_t input1, uint8_t input2, uint8_t result);

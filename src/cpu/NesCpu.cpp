@@ -89,7 +89,135 @@ int NesCpu::sbc(uint8_t operand) {
 // Other instructions...
 
 
-// ======================== ADDRESSING MODES ======================== //
+/**
+ * Retrieves the operand. The addressing mode determines how to use the address following 
+ * the opcode in the retrieval. Sometimes that address may actually point to the operand,
+ * other times it may point to the operands address, etc.
+ *
+ * Addressing modes:
+ * - Implied: There is no operand, the opcode is sufficient.
+ * - Immediate: Operand is the value after the opcode.
+ * - Absolute: Operand is the value at the absolute address. This address is specified by
+ *             the word (little endian) that follows the opcode.
+ * - Absolute X: Operand is the value at the absolute address, offset by the X register. 
+ *               May require an extra cycle if a page boundary is crossed.
+ * - Absolute Y: Operand is the value at the absolute address, offset by the Y register. 
+ *               May require an extra cycle if a page boundary is crossed.
+ * - Zero page: Operand is the value at the zero page address. This address is calculated 
+ *              by using the value after the opcode as the low byte and $00 (page 0) as 
+ *              the high byte, thus somewhere $0000 <-> $00FF.
+ * - Zero page X: Operand is the value at the zero page address, offset by the X register.
+ *                May require an extra cycle if a page boundary is crossed.
+ * - Zero page Y: Operand is the value at the zero page address, offset by the Y register.
+ *                May require an extra cycle if a page boundary is crossed.
+ * - Indirect: Only used by JMP. The word (little endian) following the opcode is the
+ *             indirect address. This indirect address points to the target address value.
+ *             Due to little endian addressing, it points to the LSB of the target address.
+ *             The operand is the full target address (where to jump to).
+ * - Indirect X: The byte after the opcode, when converted to a zero page address ($00--)
+ *               and offset by regX, is location of the LSB of the address of the operand. 
+ *               The operand value represents an address (target address).
+ * - Indirect Y: The byte after the opcode, when converted to a zero page address ($00--),
+ *               is the location of the LSB of a temporary address. When this temporary 
+ *               address is offset by regY, it points to the LSB of the operand. The operand
+ *               value represents an address (target address).
+ * 
+ **/
+uint8_t NesCpu::getOperand(AddressingMode mode, short& pageBoundaryCost) {
+    uint8_t operand;
+    uint16_t addressAfterOpcode = this->programCounter + 1;
+
+    switch (mode) {
+        case AddressingMode::IMPLIED:
+            operand = NULL;
+            break;
+        case AddressingMode::IMMEDIATE:
+            operand = read(addressAfterOpcode);
+            break;
+        case AddressingMode::ABSOLUTE:
+            uint16_t absoluteAddress = readWordToBigEndian(addressAfterOpcode);
+            operand = read(absoluteAddress);
+            break;
+        case AddressingMode::ABSOLUTE_X:
+            uint16_t absoluteAddress = readWordToBigEndian(addressAfterOpcode);
+            uint16_t effectiveAddress = absoluteAddress + this->regX;
+
+            if (isPageBoundaryCrossed(absoluteAddress, effectiveAddress)) {
+                pageBoundaryCost = 1;
+            }
+
+            operand = read(effectiveAddress);
+            break;
+        case AddressingMode::ABSOLUTE_Y:
+            uint16_t absoluteAddress = readWordToBigEndian(addressAfterOpcode);
+            uint16_t effectiveAddress = absoluteAddress + this->regY;
+
+            if (isPageBoundaryCrossed(absoluteAddress, effectiveAddress)) {
+                pageBoundaryCost = 1;
+            }
+
+            operand = read(effectiveAddress);
+            break;
+        case AddressingMode::ZERO_PAGE:
+            uint8_t zeroPageAddress = read(addressAfterOpcode);
+            operand = read(zeroPageAddress);
+            break;
+        case AddressingMode::ZERO_PAGE_X:
+            uint8_t zeroPageAddress = read(addressAfterOpcode);
+            uint16_t effectiveAddress = zeroPageAddress + this->regX;
+
+            if (isPageBoundaryCrossed(zeroPageAddress, effectiveAddress)) {
+                pageBoundaryCost = 1;
+            }
+
+            operand = read(effectiveAddress);
+            break;
+        case AddressingMode::ZERO_PAGE_Y: 
+            uint8_t zeroPageAddress = read(addressAfterOpcode);
+            uint16_t effectiveAddress = zeroPageAddress + this->regY;
+
+            if (isPageBoundaryCrossed(zeroPageAddress, effectiveAddress)) {
+                pageBoundaryCost = 1;
+            }
+
+            operand = read(effectiveAddress);
+            break;
+        case AddressingMode::INDIRECT:
+            uint16_t indirectAddress = readWordToBigEndian(addressAfterOpcode);
+            uint16_t targetAddress = readWordToBigEndian(indirectAddress);
+            operand = targetAddress;
+            break;
+
+        case AddressingMode::INDIRECT_X:
+            uint16_t zeroPageAddress = read(addressAfterOpcode);
+            uint16_t indexedAddress = zeroPageAddress + this->regX;
+            
+            if (this->isPageBoundaryCrossed(zeroPageAddress, indexedAddress)) {
+                indexedAddress -= 0x0100;       // Zero page wrap
+                pageBoundaryCost = 1;
+            }
+            uint16_t targetAddress = readWordToBigEndian(indirectAddress);
+
+            operand = targetAddress;
+            break;
+        case AddressingMode::INDIRECT_Y:
+            uint16_t zeroPageAddress = read(addressAfterOpcode);
+            uint16_t tempAddress = readWordToBigEndian(zeroPageAddress);
+            uint16_t targetAddress = tempAddress + this->regY;
+
+            if (this->isPageBoundaryCrossed(tempAddress, targetAddress)) {
+                targetAddress -= 0x0100;        // Zero page wrap
+                pageBoundaryCost = 1;
+            }
+
+            operand = targetAddress;
+            break;
+        default:
+            // TODO: error handling
+            break;
+    }
+    return operand;
+}
 
 uint16_t NesCpu::getOperandAddress(AddressingMode mode, short& pageBoundaryCost) {
     uint16_t addressOfInstructionValue = this->programCounter + 1;    // Address of value after opcode
@@ -106,11 +234,11 @@ uint16_t NesCpu::getOperandAddress(AddressingMode mode, short& pageBoundaryCost)
         case AddressingMode::IMMEDIATE:
             address = addressOfInstructionValue;
             break;
-        case AddressingMode::ABSOLUTE:
-            address = read2Bytes(addressOfInstructionValue);
+        case AddressingMode::ABSOLUTE:                                      // Absolute addressing specifies the memory location explicitly in the two bytes following the opcode
+            address = readWordToBigEndian(addressOfInstructionValue);
             break;
         case AddressingMode::ABSOLUTE_X:
-            absoluteAddress = read2Bytes(addressOfInstructionValue);
+            absoluteAddress = readWordToBigEndian(addressOfInstructionValue);
             address = absoluteAddress + this->regX;
 
             if (this->isPageBoundaryCrossed(absoluteAddress, address)) {
@@ -119,7 +247,7 @@ uint16_t NesCpu::getOperandAddress(AddressingMode mode, short& pageBoundaryCost)
 
             break;
         case AddressingMode::ABSOLUTE_Y:
-            absoluteAddress = read2Bytes(addressOfInstructionValue);
+            absoluteAddress = readWordToBigEndian(addressOfInstructionValue);
             address = absoluteAddress + this->regY;
             
             if (this->isPageBoundaryCrossed(absoluteAddress, address)) {
@@ -141,11 +269,11 @@ uint16_t NesCpu::getOperandAddress(AddressingMode mode, short& pageBoundaryCost)
         case AddressingMode::INDIRECT_X:
             zeroPageAddress = read(addressOfInstructionValue);
             indirectAddress = (uint8_t)(zeroPageAddress + this->regX);   // uint8_t handles the wrapping before uint16_t assignment
-            address = read2Bytes(indirectAddress);
+            address = readWordToBigEndian(indirectAddress);
             break;
         case AddressingMode::INDIRECT_Y:
             zeroPageAddress = read(addressOfInstructionValue);
-            indirectAddress = read2Bytes(zeroPageAddress);
+            indirectAddress = readWordToBigEndian(zeroPageAddress);
             address = indirectAddress + regY;
 
             if (this->isPageBoundaryCrossed(indirectAddress, address)) {
@@ -183,7 +311,7 @@ uint8_t NesCpu::read(uint16_t addr) {
     return memory[addr];
 }
 
-uint16_t NesCpu::read2Bytes(uint16_t addr) {
+uint16_t NesCpu::readWordToBigEndian(uint16_t addr) {
     uint16_t lowByte = read(addr);
     uint16_t highByte = read(addr + 1);
     return (highByte << 8) | lowByte;
@@ -191,4 +319,11 @@ uint16_t NesCpu::read2Bytes(uint16_t addr) {
 
 void NesCpu::write(uint16_t addr, uint8_t val) {
     memory[addr] = val;
+}
+
+void NesCpu::writeWordToLittleEndian(uint16_t addr, uint16_t val) {
+    uint8_t lowByte = val & 0x00FF;
+    uint8_t highByte = val >> 8;
+    write(addr, lowByte);
+    write(addr + 1, highByte);
 }
