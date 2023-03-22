@@ -36,14 +36,13 @@ Instruction NesCpu::fetch() {
     Opcode opcode = OpcodeTable::getOpcode(opcodeByte);
 
     short pageBoundaryCost = 0;
-    uint16_t operandAddress = getOperandAddress(opcode.getAddressingMode(), pageBoundaryCost);
-    uint8_t operand = read(operandAddress);
+    uint8_t operand = getOperand(opcode.getAddressingMode(), pageBoundaryCost);
 
     return {opcode, operand, pageBoundaryCost};
 }
 
 int NesCpu::execute(const Instruction &instruction) {
-    // TODO: IMPORTANT, move PC in each instruction
+    // TODO: IMPORTANT, move PC in each instruction (I think the Opcode::getBytes() will tell you how much)
     switch(instruction.getOpcode().getBytes()) {
 
         // ADC - add with carry
@@ -167,6 +166,7 @@ uint8_t NesCpu::getOperand(AddressingMode mode, short& pageBoundaryCost) {
             uint16_t effectiveAddress = zeroPageAddress + this->regX;
 
             if (isPageBoundaryCrossed(zeroPageAddress, effectiveAddress)) {
+                effectiveAddress -= 0x0100;         // Zero page wrap
                 pageBoundaryCost = 1;
             }
 
@@ -177,6 +177,7 @@ uint8_t NesCpu::getOperand(AddressingMode mode, short& pageBoundaryCost) {
             uint16_t effectiveAddress = zeroPageAddress + this->regY;
 
             if (isPageBoundaryCrossed(zeroPageAddress, effectiveAddress)) {
+                effectiveAddress -= 0x0100;         // Zero page wrap
                 pageBoundaryCost = 1;
             }
 
@@ -217,74 +218,6 @@ uint8_t NesCpu::getOperand(AddressingMode mode, short& pageBoundaryCost) {
             break;
     }
     return operand;
-}
-
-uint16_t NesCpu::getOperandAddress(AddressingMode mode, short& pageBoundaryCost) {
-    uint16_t addressOfInstructionValue = this->programCounter + 1;    // Address of value after opcode
-    uint16_t address = 0;
-
-    uint16_t absoluteAddress;
-    uint8_t zeroPageAddress;
-    uint16_t indirectAddress;
-    switch (mode) {
-        case AddressingMode::IMPLIED:
-            // TODO: maybe fix how we handle getting operands, because implicit doesn't need one
-            //       but it will set operand to value at address 0 by default.
-            break;
-        case AddressingMode::IMMEDIATE:
-            address = addressOfInstructionValue;
-            break;
-        case AddressingMode::ABSOLUTE:                                      // Absolute addressing specifies the memory location explicitly in the two bytes following the opcode
-            address = readWordToBigEndian(addressOfInstructionValue);
-            break;
-        case AddressingMode::ABSOLUTE_X:
-            absoluteAddress = readWordToBigEndian(addressOfInstructionValue);
-            address = absoluteAddress + this->regX;
-
-            if (this->isPageBoundaryCrossed(absoluteAddress, address)) {
-                pageBoundaryCost = 1;
-            }
-
-            break;
-        case AddressingMode::ABSOLUTE_Y:
-            absoluteAddress = readWordToBigEndian(addressOfInstructionValue);
-            address = absoluteAddress + this->regY;
-            
-            if (this->isPageBoundaryCrossed(absoluteAddress, address)) {
-                pageBoundaryCost = 1;
-            }
-            
-            break;
-        case AddressingMode::ZERO_PAGE:
-            address = read(addressOfInstructionValue);   // Cast uint8_t to uint16_t which is like byte $xx + zero page $0000 = $00xx
-            break;
-        case AddressingMode::ZERO_PAGE_X:
-            zeroPageAddress = read(addressOfInstructionValue);
-            address = (uint8_t)(zeroPageAddress + this->regX);   // uint8_t handles the wrapping before uint16_t assignment
-            break;
-        case AddressingMode::ZERO_PAGE_Y:
-            zeroPageAddress = read(addressOfInstructionValue);
-            address = (uint8_t)(zeroPageAddress + this->regY);   // uint8_t handles the wrapping before uint16_t assignment
-            break;
-        case AddressingMode::INDIRECT_X:
-            zeroPageAddress = read(addressOfInstructionValue);
-            indirectAddress = (uint8_t)(zeroPageAddress + this->regX);   // uint8_t handles the wrapping before uint16_t assignment
-            address = readWordToBigEndian(indirectAddress);
-            break;
-        case AddressingMode::INDIRECT_Y:
-            zeroPageAddress = read(addressOfInstructionValue);
-            indirectAddress = readWordToBigEndian(zeroPageAddress);
-            address = indirectAddress + regY;
-
-            if (this->isPageBoundaryCrossed(indirectAddress, address)) {
-                pageBoundaryCost = 1;
-            }
-            break;
-        default:
-            // TODO: error handling
-            break;
-    }
-    return address;
 }
 
 
