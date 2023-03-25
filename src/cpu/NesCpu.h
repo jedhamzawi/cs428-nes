@@ -5,7 +5,6 @@
 #include "AbstractClockable.h"
 #include "OpcodeTable.h"
 #include "Instruction.h"
-#include "StatusFlags.h"
 
 
 // NOTE: The 6502 is little endian, the least significant byte comes first
@@ -13,11 +12,21 @@ class NesCpu : public AbstractClockable {
 private:
 	static constexpr uint8_t STACK_POINTER_START = 0xFD;  	// Check documentation, should be $FF, but power-on/reset decrements 3?
 
+    // Flags
+    // byte = Negative, Overflow, _, BreakCommand, DecimalMode, InterruptDisable, Zero, Carry
+    bool carryFlag = false;
+    bool zeroFlag = false;
+    bool interruptFlag = false;
+    // bool decimalFlag = 0;                            // Ricoh modded the chip so NES doesn't have decimal mode
+    bool breakFlag = false;
+    // unused bit
+    bool overflowFlag = false;
+    bool negativeFlag = false;
+
 	uint8_t regAccumulator = 0;								// (A)
 	uint8_t regX = 0;										// (X)
 	uint8_t regY = 0;										// (Y)
 	uint8_t regStatus = 0;									// (P)		byte = Negative, Overflow, _, Break, Decimal, Interrupt, Zero, Carry
-	StatusFlags flags;
 	uint8_t stackPointer = STACK_POINTER_START;				// (S) Stack is stored top -> bottom ($01FF -> $0100)
 	uint16_t programCounter = 0; 							// (PC)
 	uint8_t* memory;										// pointer to NesSystem memory
@@ -30,10 +39,9 @@ private:
 	void write(uint16_t addr, uint8_t val);
 	void writeWordToLittleEndian(uint16_t addr, uint16_t val);
 
-	uint8_t NesCpu::getOperand(AddressingMode mode, short& pageBoundaryCost);
-	uint16_t getOperandAddress(AddressingMode mode, short& pageBoundaryCost);
-	bool isPageBoundaryCrossed(uint16_t addr1, uint16_t addr2);
-	bool NesCpu::hasOverflow(uint8_t input1, uint8_t input2, uint8_t result);
+	uint8_t getOperand(AddressingMode mode, short& pageBoundaryCost);
+	static bool isPageBoundaryCrossed(uint16_t addr1, uint16_t addr2);
+	static bool hasOverflow(uint8_t input1, uint8_t input2, uint8_t result);
 
 
 	// Load/Store Operations
@@ -114,21 +122,6 @@ private:
 	int nop();      // NOP - no operation
 	int rti();      // RTI - return from interrupt
 
-	// Status Flag operations
-	void setCarryFlag(bool flag);
-	bool isCarryFlag();
-	void setZeroFlag(bool flag);
-	bool isZeroFlag();
-	void setInterruptDisable(bool flag);
-	bool isInterruptDisable();
-	void setDecimalMode(bool flag);
-	bool isDecimalMode();
-	void setBreakCommand(bool flag);
-	bool isBreakCommand();
-	void setOverflowFlag(bool flag);
-	bool isOverflowFlag();
-	void setNegativeFlag(bool flag);
-	bool isNegativeFlag();
 	
 public:
 	NesCpu(uint8_t* memory);

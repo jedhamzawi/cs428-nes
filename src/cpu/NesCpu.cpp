@@ -70,12 +70,12 @@ int NesCpu::execute(const Instruction &instruction) {
 // ======================== INSTRUCTIONS ======================== //
 
 int NesCpu::adc(uint8_t operand) {
-    uint16_t result = this->regAccumulator + operand + isCarryFlag();
+    uint16_t result = this->regAccumulator + operand + this->carryFlag;
    
-    this->flags.setCarryFlag(result > 0xFF);
-    this->flags.setZeroFlag((result & 0xFF) == 0);
-    this->flags.setOverflowFlag(hasOverflow(this->regAccumulator, operand, result));
-    this->flags.setNegativeFlag(result & 0x80);
+    this->carryFlag = result > 0xFF;
+    this->zeroFlag = (result & 0xFF) == 0;
+    this->overflowFlag = hasOverflow(this->regAccumulator, operand, result);
+    this->negativeFlag = result & 0x80;
 
     this->regAccumulator = (uint8_t)result;
 }
@@ -127,17 +127,20 @@ uint8_t NesCpu::getOperand(AddressingMode mode, short& pageBoundaryCost) {
     uint16_t addressAfterOpcode = this->programCounter + 1;
 
     switch (mode) {
-        case AddressingMode::IMPLIED:
-            operand = NULL;
+        case AddressingMode::IMPLIED: {
+            operand = '\0';
             break;
-        case AddressingMode::IMMEDIATE:
+        }
+        case AddressingMode::IMMEDIATE: {
             operand = read(addressAfterOpcode);
             break;
-        case AddressingMode::ABSOLUTE:
+        }
+        case AddressingMode::ABSOLUTE: {
             uint16_t absoluteAddress = readWordToBigEndian(addressAfterOpcode);
             operand = read(absoluteAddress);
             break;
-        case AddressingMode::ABSOLUTE_X:
+        }
+        case AddressingMode::ABSOLUTE_X: {
             uint16_t absoluteAddress = readWordToBigEndian(addressAfterOpcode);
             uint16_t effectiveAddress = absoluteAddress + this->regX;
 
@@ -147,7 +150,8 @@ uint8_t NesCpu::getOperand(AddressingMode mode, short& pageBoundaryCost) {
 
             operand = read(effectiveAddress);
             break;
-        case AddressingMode::ABSOLUTE_Y:
+        }
+        case AddressingMode::ABSOLUTE_Y: {
             uint16_t absoluteAddress = readWordToBigEndian(addressAfterOpcode);
             uint16_t effectiveAddress = absoluteAddress + this->regY;
 
@@ -157,11 +161,13 @@ uint8_t NesCpu::getOperand(AddressingMode mode, short& pageBoundaryCost) {
 
             operand = read(effectiveAddress);
             break;
-        case AddressingMode::ZERO_PAGE:
+        }
+        case AddressingMode::ZERO_PAGE: {
             uint8_t zeroPageAddress = read(addressAfterOpcode);
             operand = read(zeroPageAddress);
             break;
-        case AddressingMode::ZERO_PAGE_X:
+        }
+        case AddressingMode::ZERO_PAGE_X: {
             uint8_t zeroPageAddress = read(addressAfterOpcode);
             uint16_t effectiveAddress = zeroPageAddress + this->regX;
 
@@ -172,7 +178,8 @@ uint8_t NesCpu::getOperand(AddressingMode mode, short& pageBoundaryCost) {
 
             operand = read(effectiveAddress);
             break;
-        case AddressingMode::ZERO_PAGE_Y: 
+        }
+        case AddressingMode::ZERO_PAGE_Y: {
             uint8_t zeroPageAddress = read(addressAfterOpcode);
             uint16_t effectiveAddress = zeroPageAddress + this->regY;
 
@@ -183,25 +190,27 @@ uint8_t NesCpu::getOperand(AddressingMode mode, short& pageBoundaryCost) {
 
             operand = read(effectiveAddress);
             break;
-        case AddressingMode::INDIRECT:
+        }
+        case AddressingMode::INDIRECT: {
             uint16_t indirectAddress = readWordToBigEndian(addressAfterOpcode);
             uint16_t targetAddress = readWordToBigEndian(indirectAddress);
             operand = targetAddress;
             break;
-
-        case AddressingMode::INDIRECT_X:
+        }
+        case AddressingMode::INDIRECT_X: {
             uint16_t zeroPageAddress = read(addressAfterOpcode);
-            uint16_t indexedAddress = zeroPageAddress + this->regX;
-            
-            if (this->isPageBoundaryCrossed(zeroPageAddress, indexedAddress)) {
-                indexedAddress -= 0x0100;       // Zero page wrap
+            uint16_t indirectAddress = zeroPageAddress + this->regX;
+
+            if (this->isPageBoundaryCrossed(zeroPageAddress, indirectAddress)) {
+                indirectAddress -= 0x0100;       // Zero page wrap
                 pageBoundaryCost = 1;
             }
             uint16_t targetAddress = readWordToBigEndian(indirectAddress);
 
             operand = targetAddress;
             break;
-        case AddressingMode::INDIRECT_Y:
+        }
+        case AddressingMode::INDIRECT_Y: {
             uint16_t zeroPageAddress = read(addressAfterOpcode);
             uint16_t tempAddress = readWordToBigEndian(zeroPageAddress);
             uint16_t targetAddress = tempAddress + this->regY;
@@ -213,6 +222,7 @@ uint8_t NesCpu::getOperand(AddressingMode mode, short& pageBoundaryCost) {
 
             operand = targetAddress;
             break;
+        }
         default:
             // TODO: error handling
             break;
