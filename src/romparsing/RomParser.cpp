@@ -24,7 +24,7 @@ Rom* RomParser::parseROM(const std::string &filePath) {
         char byte;
 
         //BEGIN HEADER READ IN
-        //read the first three bytes in as chars
+        //read the first three numBytes in as chars
         char nesIDENT[3];
         for (char & x : nesIDENT) {
             infile.get(byte);
@@ -65,7 +65,7 @@ Rom* RomParser::parseROM(const std::string &filePath) {
         //this->romHeader.printHeaderInformation();
         // TODO: Remove demo or log
         std::cout << "BEGIN PARSING PRG ROMS" << std::endl;
-        auto *programROMS = new std::vector<std::array<uint8_t, PRG_ROM_SIZE>>(romHeader.getNumPrgRom()); //This is an array of all the program rom stored as single bytes.
+        auto *programROMS = new std::vector<std::array<uint8_t, PRG_ROM_SIZE>>(romHeader.getNumPrgRom()); //This is an array of all the program rom stored as single numBytes.
         //This loop is where we need to store all of the PRG-ROM data into banks
         for (int x = 0; x < romHeader.getNumPrgRom(); x++) {
             for (int y = 0; y < PRG_ROM_SIZE; y++) {

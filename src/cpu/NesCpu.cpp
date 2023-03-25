@@ -14,7 +14,7 @@ void NesCpu::step() {
         Instruction instruction = this->fetch();
 
         // TODO: Remove demo or log
-        std::cout << "  " << instruction.getOpcode().getMnemonic();
+        std::cout << "  " << instruction.getOpcode().getMnemonicString();
         if (instruction.getOperand() != 0) {
             std::cout << " 0x" << 0u + instruction.getOperand();
         }
@@ -42,23 +42,47 @@ Instruction NesCpu::fetch() {
 }
 
 int NesCpu::execute(const Instruction &instruction) {
-    // TODO: IMPORTANT, move PC in each instruction (I think the Opcode::getBytes() will tell you how much)
+    // TODO: IMPORTANT, move PC in each instruction (I think the Opcode::getNumBytes() will tell you how much)
     bool jumped = false;
-    switch(instruction.getOpcode().getBytes()) {
+    switch(instruction.getOpcode().getMnemonic()) {
 
-        // ADC - add with carry
-        case 0x61: case 0x65: case 0x69: case 0x6D:
-        case 0x71: case 0x75: case 0x79: case 0x7D:
+        case Mnemonic::ADC:
             adc(instruction.getOperand());
             break;
-
-        // SBC - subtract with carry
-        case 0xE1: case 0xE5: case 0xE9: case 0xED:
-        case 0xF1: case 0xF5: case 0xF9: case 0xFD:
+        case Mnemonic::SBC:
             sbc(instruction.getOperand());
+            break;
+        // CMP - compare with A
+        case Mnemonic::CMP:
+            cmp(instruction.getOperand());
+            break;
+        // CPX - compare with X
+        case Mnemonic::CPX:
+            cpx(instruction.getOperand());
+            break;
+        // CPY - compare with Y
+        case Mnemonic::CPY:
+            cpy(instruction.getOperand());
             break;
 
         // Other instructions...
+
+        // Status Flags
+        case Mnemonic::CLC:
+            clc();
+            break;
+        case Mnemonic::SEC:
+            sec();
+            break;
+        case Mnemonic::CLI:
+            cli();
+            break;
+        case Mnemonic::SEI:
+            sei();
+            break;
+        case Mnemonic::CLV:
+            clv();
+            break;
         // TODO: set jumped flag if performed JMP, RTN, RET or other jump operation
         default:
             // Unknown opcode, handle error here
@@ -66,15 +90,16 @@ int NesCpu::execute(const Instruction &instruction) {
     }
 
     if (!jumped) {
-        incProgramCounter(instruction.getOpcode().getBytes());
+        incProgramCounter(instruction.getOpcode().getNumBytes());
     }
 
-    return instruction.getOpcode().getCycles() + instruction.getPageBoundaryCost();
+    return instruction.getOpcode().getNumCycles() + instruction.getPageBoundaryCost();
 }
 
 
 // ======================== INSTRUCTIONS ======================== //
 
+// Arithmetic
 int NesCpu::adc(const uint8_t &operand) {
     uint16_t result = this->regAccumulator + operand + this->carryFlag;
    
@@ -95,6 +120,7 @@ int NesCpu::sbc(const uint8_t &operand) {
     this->regAccumulator = result;
 }
 
+// Compare
 int NesCpu::cmp(const uint8_t &operand) {
     uint16_t result = this->regAccumulator - operand;
 
@@ -119,6 +145,26 @@ int NesCpu::cpy(const uint8_t &operand) {
     this->negativeFlag = result & 0x80;
 }
 
+// Status Flag Changes
+int NesCpu::clc() {
+    this->carryFlag = false;
+}
+
+int NesCpu::cli() {
+    this->interruptFlag = false;
+}
+
+int NesCpu::clv() {
+    this->overflowFlag = false;
+}
+
+int NesCpu::sec() {
+    this->carryFlag = true;
+}
+
+int NesCpu::sei() {
+    this->interruptFlag = true;
+}
 
 // Other instructions...
 

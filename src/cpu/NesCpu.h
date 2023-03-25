@@ -75,6 +75,8 @@ private:
 	// Arithmetic
 	int adc(const uint8_t &operand);      // ADC - add with carry
 	int sbc(const uint8_t &operand);      // SBC - subtract with carry
+
+    // Compare
 	int cmp(const uint8_t &operand);      // CMP - compare (with accumulator)
 	int cpx(const uint8_t &operand);      // CPX - compare with X
 	int cpy(const uint8_t &operand);      // CPY - compare with Y
@@ -110,11 +112,11 @@ private:
 
 	// Status Flag Changes
 	int clc();      // CLC - clear carry
-	int cld();      // CLD - clear decimal
+	//int cld();      // CLD - clear decimal (decimal flag unused in NES)
 	int cli();      // CLI - clear interrupt disable
 	int clv();      // CLV - clear overflow
 	int sec();      // SEC - set carry
-	int sed();      // SED - set decimal
+	//int sed();      // SED - set decimal (decimal flag unused in NES)
 	int sei();      // SEI - set interrupt disable
 
 	// System Functions
