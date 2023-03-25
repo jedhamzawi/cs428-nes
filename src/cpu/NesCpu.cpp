@@ -43,6 +43,7 @@ Instruction NesCpu::fetch() {
 
 int NesCpu::execute(const Instruction &instruction) {
     // TODO: IMPORTANT, move PC in each instruction (I think the Opcode::getBytes() will tell you how much)
+    bool jumped = false;
     switch(instruction.getOpcode().getBytes()) {
 
         // ADC - add with carry
@@ -58,18 +59,23 @@ int NesCpu::execute(const Instruction &instruction) {
             break;
 
         // Other instructions...
-        
+        // TODO: set jumped flag if performed JMP, RTN, RET or other jump operation
         default:
             // Unknown opcode, handle error here
             break;
     }
+
+    if (!jumped) {
+        incProgramCounter(instruction.getOpcode().getBytes());
+    }
+
     return instruction.getOpcode().getCycles() + instruction.getPageBoundaryCost();
 }
 
 
 // ======================== INSTRUCTIONS ======================== //
 
-int NesCpu::adc(uint8_t operand) {
+int NesCpu::adc(const uint8_t &operand) {
     uint16_t result = this->regAccumulator + operand + this->carryFlag;
    
     this->carryFlag = result > 0xFF;
@@ -80,8 +86,37 @@ int NesCpu::adc(uint8_t operand) {
     this->regAccumulator = (uint8_t)result;
 }
 
-int NesCpu::sbc(uint8_t operand) {
-    adc(~operand);      // A - B = A + (-B)
+int NesCpu::sbc(const uint8_t &operand) {
+    uint8_t result = this->regAccumulator - operand - (~this->carryFlag);
+
+    this->carryFlag = !(result & 0x100);
+    this->zeroFlag = result == 0;
+    this->overflowFlag = (this->regAccumulator ^ result) & (~operand ^ result) & 0x80;
+    this->regAccumulator = result;
+}
+
+int NesCpu::cmp(const uint8_t &operand) {
+    uint16_t result = this->regAccumulator - operand;
+
+    this->carryFlag = !(result & 0x100);
+    this->zeroFlag = result == 0;
+    this->negativeFlag = result & 0x80;
+}
+
+int NesCpu::cpx(const uint8_t &operand) {
+    uint16_t result = this->regX - operand;
+
+    this->carryFlag = !(result & 0x100);
+    this->zeroFlag = result == 0;
+    this->negativeFlag = result & 0x80;
+}
+
+int NesCpu::cpy(const uint8_t &operand) {
+    uint16_t result = this->regY - operand;
+
+    this->carryFlag = !(result & 0x100);
+    this->zeroFlag = result == 0;
+    this->negativeFlag = result & 0x80;
 }
 
 
@@ -247,7 +282,11 @@ bool NesCpu::hasOverflow(uint8_t input1, uint8_t input2, uint8_t result) {
 
 void NesCpu::initProgramCounter() {
     // Set program start location based on RESET vector
-    programCounter = memory[0xFFFD] * 256 + memory[0xFFFC];
+    this->programCounter = memory[0xFFFD] * 256 + memory[0xFFFC];
+}
+
+void NesCpu::incProgramCounter(uint8_t opSize) {
+    this->programCounter += opSize;
 }
 
 uint8_t NesCpu::read(uint16_t addr) {

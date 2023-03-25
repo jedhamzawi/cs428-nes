@@ -73,11 +73,11 @@ private:
 	int bit();      // BIT - bit test
 
 	// Arithmetic
-	int adc(uint8_t operand);      // ADC - add with carry
-	int sbc(uint8_t operand);      // SBC - subtract with carry
-	int cmp();      // CMP - compare (with accumulator)
-	int cpx();      // CPX - compare with X
-	int cpy();      // CPY - compare with Y
+	int adc(const uint8_t &operand);      // ADC - add with carry
+	int sbc(const uint8_t &operand);      // SBC - subtract with carry
+	int cmp(const uint8_t &operand);      // CMP - compare (with accumulator)
+	int cpx(const uint8_t &operand);      // CPX - compare with X
+	int cpy(const uint8_t &operand);      // CPY - compare with Y
 
 	// Increments and Decrements
 	int inc();      // INC - increment
@@ -122,7 +122,8 @@ private:
 	int nop();      // NOP - no operation
 	int rti();      // RTI - return from interrupt
 
-	
+    void incProgramCounter(uint8_t opSize);
+
 public:
 	NesCpu(uint8_t* memory);
 	~NesCpu();
