@@ -46,21 +46,38 @@ int NesCpu::execute(const Instruction &instruction) {
     bool jumped = false;
     switch(instruction.getOpcode().getMnemonic()) {
 
+        case Mnemonic::LDA:
+            lda(instruction.getOperand());
+            break;
+        case Mnemonic::LDX:
+            ldx(instruction.getOperand());
+            break;
+        case Mnemonic::LDY:
+            ldy(instruction.getOperand());
+            break;
+        case Mnemonic::STA:
+            sta(instruction.getOperand());
+            break;
+        case Mnemonic::STX:
+            stx(instruction.getOperand());
+            break;
+        case Mnemonic::STY:
+            sty(instruction.getOperand());
+            break;
+
         case Mnemonic::ADC:
             adc(instruction.getOperand());
             break;
         case Mnemonic::SBC:
             sbc(instruction.getOperand());
             break;
-        // CMP - compare with A
+
         case Mnemonic::CMP:
             cmp(instruction.getOperand());
             break;
-        // CPX - compare with X
         case Mnemonic::CPX:
             cpx(instruction.getOperand());
             break;
-        // CPY - compare with Y
         case Mnemonic::CPY:
             cpy(instruction.getOperand());
             break;
@@ -105,6 +122,31 @@ int NesCpu::execute(const Instruction &instruction) {
 
 
 // ======================== INSTRUCTIONS ======================== //
+
+// Load/Store
+int NesCpu::lda(const uint8_t &operand) {
+    this->regAccumulator = operand;
+}
+
+int NesCpu::ldx(const uint8_t &operand) {
+    this->regX = operand;
+}
+
+int NesCpu::ldy(const uint8_t &operand) {
+    this->regY = operand;
+}
+
+int NesCpu::sta(const uint8_t &operand) {
+    this->memory[operand] = this->regAccumulator;
+}
+
+int NesCpu::stx(const uint8_t &operand) {
+    this->memory[operand] = this->regX;
+}
+
+int NesCpu::sty(const uint8_t &operand) {
+    this->memory[operand] = this->regY;
+}
 
 // Arithmetic
 int NesCpu::adc(const uint8_t &operand) {

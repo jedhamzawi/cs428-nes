@@ -45,12 +45,12 @@ private:
 
 
 	// Load/Store Operations
-	int lda();      // LDA - load accumulator
-	int ldx();      // LDX - load X
-	int ldy();      // LDY - load Y
-	int sta();      // STA - store accumulator
-	int stx();      // STX - store X
-	int sty();      // STY - store Y
+    int lda(const uint8_t &operand);      // LDA - load accumulator
+	int ldx(const uint8_t &operand);      // LDX - load X
+	int ldy(const uint8_t &operand);      // LDY - load Y
+	int sta(const uint8_t &operand);      // STA - store accumulator
+	int stx(const uint8_t &operand);      // STX - store X
+	int sty(const uint8_t &operand);      // STY - store Y
 
 	// Register Transfers
 	int tax();      // TAX - transfer accumulator to X
