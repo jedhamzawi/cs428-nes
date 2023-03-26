@@ -71,18 +71,25 @@ int NesCpu::execute(const Instruction &instruction) {
         case Mnemonic::CLC:
             clc();
             break;
-        case Mnemonic::SEC:
-            sec();
+        case Mnemonic::CLD:
+            cld();
             break;
         case Mnemonic::CLI:
             cli();
             break;
-        case Mnemonic::SEI:
-            sei();
-            break;
         case Mnemonic::CLV:
             clv();
             break;
+        case Mnemonic::SEC:
+            sec();
+            break;
+        case Mnemonic::SED:
+            sed();
+            break;
+        case Mnemonic::SEI:
+            sei();
+            break;
+
         // TODO: set jumped flag if performed JMP, RTN, RET or other jump operation
         default:
             // Unknown opcode, handle error here
@@ -150,6 +157,10 @@ int NesCpu::clc() {
     this->carryFlag = false;
 }
 
+int NesCpu::cld() {
+    this->decimalFlag = false;
+}
+
 int NesCpu::cli() {
     this->interruptFlag = false;
 }
@@ -160,6 +171,10 @@ int NesCpu::clv() {
 
 int NesCpu::sec() {
     this->carryFlag = true;
+}
+
+int NesCpu::sed() {
+    this->decimalFlag = true;
 }
 
 int NesCpu::sei() {

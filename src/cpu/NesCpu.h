@@ -17,7 +17,7 @@ private:
     bool carryFlag = false;
     bool zeroFlag = false;
     bool interruptFlag = false;
-    // bool decimalFlag = 0;                            // Ricoh modded the chip so NES doesn't have decimal mode
+    bool decimalFlag = false;           // Although NES doesn't utilize this flag, many ROMs still clear it anyway
     bool breakFlag = false;
     // unused bit
     bool overflowFlag = false;
@@ -112,11 +112,11 @@ private:
 
 	// Status Flag Changes
 	int clc();      // CLC - clear carry
-	//int cld();      // CLD - clear decimal (decimal flag unused in NES)
+	int cld();      // CLD - clear decimal (decimal flag unused in NES)
 	int cli();      // CLI - clear interrupt disable
 	int clv();      // CLV - clear overflow
 	int sec();      // SEC - set carry
-	//int sed();      // SED - set decimal (decimal flag unused in NES)
+	int sed();      // SED - set decimal (decimal flag unused in NES)
 	int sei();      // SEI - set interrupt disable
 
 	// System Functions
