@@ -114,6 +114,25 @@ int NesCpu::execute(const Instruction &instruction) {
             cpy(instruction.getOperand());
             break;
 
+        case Mnemonic::INC:
+            inc(instruction.getOperand());
+            break;
+        case Mnemonic::INX:
+            inx();
+            break;
+        case Mnemonic::INY:
+            iny();
+            break;
+        case Mnemonic::DEC:
+            dec(instruction.getOperand());
+            break;
+        case Mnemonic::DEX:
+            dex();
+            break;
+        case Mnemonic::DEY:
+            dey();
+            break;
+
         // Other instructions...
 
         // Status Flags
@@ -301,6 +320,47 @@ int NesCpu::cpy(const uint8_t &operand) {
     setCarryFlag(!(result & 0x100));
     setZeroFlag(result == 0);
     setNegativeFlag(result & 0x80);
+}
+
+int NesCpu::inc(const uint8_t &operand) {
+    uint8_t result = this->memory[operand] + 1;
+    setZeroFlag(result == 0);
+    setNegativeFlag(result & 0x80);
+
+    this->memory[operand] = result;
+}
+
+// Increments/Decrements
+int NesCpu::inx() {
+    this->regX++;
+    setZeroFlag(this->regX == 0);
+    setNegativeFlag(this->regX & 0x80);
+}
+
+int NesCpu::iny() {
+    this->regY++;
+    setZeroFlag(this->regY == 0);
+    setNegativeFlag(this->regY & 0x80);
+}
+
+int NesCpu::dec(const uint8_t &operand) {
+    uint8_t result = this->memory[operand] - 1;
+    setZeroFlag(result == 0);
+    setNegativeFlag(result & 0x80);
+
+    this->memory[operand] = result;
+}
+
+int NesCpu::dex() {
+    this->regX--;
+    setZeroFlag(this->regX == 0);
+    setNegativeFlag(this->regX & 0x80);
+}
+
+int NesCpu::dey() {
+    this->regY--;
+    setZeroFlag(this->regY == 0);
+    setNegativeFlag(this->regY & 0x80);
 }
 
 // Status Flag Changes

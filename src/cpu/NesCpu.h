@@ -80,10 +80,10 @@ private:
 	int cpy(const uint8_t &operand);      // CPY - compare with Y
 
 	// Increments and Decrements
-	int inc();      // INC - increment
+	int inc(const uint8_t &operand);      // INC - increment
 	int inx();      // INX - increment X
 	int iny();      // INY - increment Y
-	int dec();      // DEC - decrement
+	int dec(const uint8_t &operand);      // DEC - decrement
 	int dex();      // DEX - decrement X
 	int dey();      // DEY - decrement Y
 
