@@ -78,6 +78,25 @@ int NesCpu::execute(const Instruction &instruction) {
             tya();
             break;
 
+        case Mnemonic::TSX:
+            tsx();
+            break;
+        case Mnemonic::TXS:
+            txs();
+            break;
+        case Mnemonic::PHA:
+            pha();
+            break;
+        case Mnemonic::PHP:
+            php();
+            break;
+        case Mnemonic::PLA:
+            pla();
+            break;
+        case Mnemonic::PLP:
+            plp();
+            break;
+
         case Mnemonic::ADC:
             adc(instruction.getOperand());
             break;
@@ -138,22 +157,22 @@ int NesCpu::execute(const Instruction &instruction) {
 
 // Load/Store
 int NesCpu::lda(const uint8_t &operand) {
-    this->zeroFlag = operand == 0;
-    this->negativeFlag = operand & 0x80;
+    setZeroFlag(operand == 0);
+    setNegativeFlag(operand & 0x80);
 
     this->regAccumulator = operand;
 }
 
 int NesCpu::ldx(const uint8_t &operand) {
-    this->zeroFlag = operand == 0;
-    this->negativeFlag = operand & 0x80;
+    setZeroFlag(operand == 0);
+    setNegativeFlag(operand & 0x80);
 
     this->regX = operand;
 }
 
 int NesCpu::ldy(const uint8_t &operand) {
-    this->zeroFlag = operand == 0;
-    this->negativeFlag = operand & 0x80;
+    setZeroFlag(operand == 0);
+    setNegativeFlag(operand & 0x80);
 
     this->regY = operand;
 }
@@ -172,51 +191,90 @@ int NesCpu::sty(const uint8_t &operand) {
 
 // Transfer Registers
 int NesCpu::tax() {
-    this->zeroFlag = this->regAccumulator == 0;
-    this->negativeFlag = this->regAccumulator & 0x80;
+    setZeroFlag(this->regAccumulator == 0);
+    setNegativeFlag(this->regAccumulator & 0x80);
 
     this->regX = this->regAccumulator;
 }
 
 int NesCpu::tay() {
-    this->zeroFlag = this->regAccumulator == 0;
-    this->negativeFlag = this->regAccumulator & 0x80;
+    setZeroFlag(this->regAccumulator == 0);
+    setNegativeFlag(this->regAccumulator & 0x80);
 
     this->regY = this->regAccumulator;
 }
 
 int NesCpu::txa() {
-    this->zeroFlag = this->regX == 0;
-    this->negativeFlag = this->regX & 0x80;
+    setZeroFlag(this->regX == 0);
+    setNegativeFlag(this->regX & 0x80);
 
     this->regAccumulator = this->regX;
 }
 
 int NesCpu::tya() {
-    this->zeroFlag = this->regY == 0;
-    this->negativeFlag = this->regY & 0x80;
+    setZeroFlag(this->regY == 0);
+    setNegativeFlag(this->regY & 0x80);
 
     this->regAccumulator = this->regY;
 }
 
+// Stack Operations
+int NesCpu::tsx() {
+    this->regX = this->stackPointer;
+
+    setZeroFlag(this->regX == 0);
+    setNegativeFlag(this->regX & 0x80);
+}
+
+int NesCpu::txs() {
+    this->stackPointer = this->regX;
+}
+
+int NesCpu::pha() {
+    // TODO: When popping from stack, should wrap around to 0x00 if stack is empty
+    this->stackPointer--;
+    // TODO: Use read/write functions rather than explicitly manipulating memory array
+    this->memory[this->stackPointer] = this->regAccumulator;
+    return 0;
+}
+
+int NesCpu::php() {
+    this->stackPointer--;
+    this->memory[this->stackPointer] = this->regStatus;
+}
+
+int NesCpu::pla() {
+    this->regAccumulator = this->memory[this->stackPointer];
+    this->stackPointer++;
+
+    setZeroFlag(this->regAccumulator == 0);
+    setNegativeFlag(this->regAccumulator & 0x80);
+}
+
+int NesCpu::plp() {
+    this->regStatus = this->memory[this->stackPointer];
+    this->stackPointer++;
+}
+
+
 // Arithmetic
 int NesCpu::adc(const uint8_t &operand) {
-    uint16_t result = this->regAccumulator + operand + this->carryFlag;
+    uint16_t result = this->regAccumulator + operand + isCarryFlag();
    
-    this->carryFlag = result > 0xFF;
-    this->zeroFlag = (result & 0xFF) == 0;
-    this->overflowFlag = hasOverflow(this->regAccumulator, operand, result);
-    this->negativeFlag = result & 0x80;
+    setCarryFlag(result > 0xFF);
+    setZeroFlag((result & 0xFF) == 0);
+    setOverflowFlag(hasOverflow(this->regAccumulator, operand, result));
+    setNegativeFlag(result & 0x80);
 
     this->regAccumulator = (uint8_t)result;
 }
 
 int NesCpu::sbc(const uint8_t &operand) {
-    uint8_t result = this->regAccumulator - operand - (~this->carryFlag);
+    uint8_t result = this->regAccumulator - operand - !isCarryFlag();
 
-    this->carryFlag = !(result & 0x100);
-    this->zeroFlag = result == 0;
-    this->overflowFlag = (this->regAccumulator ^ result) & (~operand ^ result) & 0x80;
+    setCarryFlag(!(result & 0x100));
+    setZeroFlag(result == 0);
+    setOverflowFlag((this->regAccumulator ^ result) & (~operand ^ result) & 0x80);
     this->regAccumulator = result;
 }
 
@@ -224,54 +282,54 @@ int NesCpu::sbc(const uint8_t &operand) {
 int NesCpu::cmp(const uint8_t &operand) {
     uint16_t result = this->regAccumulator - operand;
 
-    this->carryFlag = !(result & 0x100);
-    this->zeroFlag = result == 0;
-    this->negativeFlag = result & 0x80;
+    setCarryFlag(!(result & 0x100));
+    setZeroFlag(result == 0);
+    setNegativeFlag(result & 0x80);
 }
 
 int NesCpu::cpx(const uint8_t &operand) {
     uint16_t result = this->regX - operand;
 
-    this->carryFlag = !(result & 0x100);
-    this->zeroFlag = result == 0;
-    this->negativeFlag = result & 0x80;
+    setCarryFlag(!(result & 0x100));
+    setZeroFlag(result == 0);
+    setNegativeFlag(result & 0x80);
 }
 
 int NesCpu::cpy(const uint8_t &operand) {
     uint16_t result = this->regY - operand;
 
-    this->carryFlag = !(result & 0x100);
-    this->zeroFlag = result == 0;
-    this->negativeFlag = result & 0x80;
+    setCarryFlag(!(result & 0x100));
+    setZeroFlag(result == 0);
+    setNegativeFlag(result & 0x80);
 }
 
 // Status Flag Changes
 int NesCpu::clc() {
-    this->carryFlag = false;
+    setCarryFlag(false);
 }
 
 int NesCpu::cld() {
-    this->decimalFlag = false;
+    setDecimalFlag(false);
 }
 
 int NesCpu::cli() {
-    this->interruptFlag = false;
+    setInterruptFlag(false);
 }
 
 int NesCpu::clv() {
-    this->overflowFlag = false;
+    setOverflowFlag(false);
 }
 
 int NesCpu::sec() {
-    this->carryFlag = true;
+    setCarryFlag(true);
 }
 
 int NesCpu::sed() {
-    this->decimalFlag = true;
+    setDecimalFlag(true);
 }
 
 int NesCpu::sei() {
-    this->interruptFlag = true;
+    setInterruptFlag(true);
 }
 
 // Other instructions...
@@ -312,6 +370,7 @@ int NesCpu::sei() {
  * 
  **/
 uint8_t NesCpu::getOperand(AddressingMode mode, short& pageBoundaryCost) {
+    // FIXME: Something is wrong with addressing modes (likely having to do with little/big endian)
     uint8_t operand;
     uint16_t addressAfterOpcode = this->programCounter + 1;
 
@@ -462,4 +521,90 @@ void NesCpu::writeWordToLittleEndian(uint16_t addr, uint16_t val) {
     uint8_t highByte = val >> 8;
     write(addr, lowByte);
     write(addr + 1, highByte);
+}
+
+// ======================== STATUS FLAGS ======================== //
+
+void NesCpu::setCarryFlag(bool flag) {
+    if (flag) {
+        regStatus |= CARRY_FLAG_MASK;
+    } else {
+        regStatus &= ~CARRY_FLAG_MASK;
+    }
+}
+
+bool NesCpu::isCarryFlag() {
+    return (regStatus & CARRY_FLAG_MASK) != 0;
+}
+
+void NesCpu::setZeroFlag(bool flag) {
+    if (flag) {
+        regStatus |= ZERO_FLAG_MASK;
+    } else {
+        regStatus &= ~ZERO_FLAG_MASK;
+    }
+}
+
+bool NesCpu::isZeroFlag() {
+    return (regStatus & ZERO_FLAG_MASK) != 0;
+}
+
+void NesCpu::setInterruptFlag(bool flag) {
+    if (flag) {
+        regStatus |= INTERRUPT_DISABLE_MASK;
+    } else {
+        regStatus &= ~INTERRUPT_DISABLE_MASK;
+    }
+}
+
+bool NesCpu::isInterruptFlag() {
+    return (regStatus & INTERRUPT_DISABLE_MASK) != 0;
+}
+
+void NesCpu::setDecimalFlag(bool flag) {
+    if (flag) {
+        regStatus |= DECIMAL_MODE_MASK;
+    } else {
+        regStatus &= ~DECIMAL_MODE_MASK;
+    }
+}
+
+bool NesCpu::isDecimalFlag() {
+    return (regStatus & DECIMAL_MODE_MASK) != 0;
+}
+
+void NesCpu::setBreakCommand(bool flag) {
+    if (flag) {
+        regStatus |= BREAK_COMMAND_MASK;
+    } else {
+        regStatus &= ~BREAK_COMMAND_MASK;
+    }
+}
+
+bool NesCpu::isBreakCommand() {
+    return (regStatus & BREAK_COMMAND_MASK) != 0;
+}
+
+void NesCpu::setOverflowFlag(bool flag) {
+    if (flag) {
+        regStatus |= OVERFLOW_FLAG_MASK;
+    } else {
+        regStatus &= ~OVERFLOW_FLAG_MASK;
+    }
+}
+
+bool NesCpu::isOverflowFlag() {
+    return (regStatus & OVERFLOW_FLAG_MASK) != 0;
+}
+
+void NesCpu::setNegativeFlag(bool flag) {
+    if (flag) {
+        regStatus |= NEGATIVE_FLAG_MASK;
+    } else {
+        regStatus &= ~NEGATIVE_FLAG_MASK;
+    }
+}
+
+bool NesCpu::isNegativeFlag() {
+    return (regStatus & NEGATIVE_FLAG_MASK) != 0;
 }

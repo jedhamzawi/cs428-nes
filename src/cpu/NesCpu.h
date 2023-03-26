@@ -12,21 +12,19 @@ class NesCpu : public AbstractClockable {
 private:
 	static constexpr uint8_t STACK_POINTER_START = 0xFD;  	// Check documentation, should be $FF, but power-on/reset decrements 3?
 
-    // Flags
-    // byte = Negative, Overflow, _, BreakCommand, DecimalMode, InterruptDisable, Zero, Carry
-    bool carryFlag = false;
-    bool zeroFlag = false;
-    bool interruptFlag = false;
-    bool decimalFlag = false;           // Although NES doesn't utilize this flag, many ROMs still clear it anyway
-    bool breakFlag = false;
-    // unused bit
-    bool overflowFlag = false;
-    bool negativeFlag = false;
+    const uint8_t CARRY_FLAG_MASK = 		0b00000001;
+    const uint8_t ZERO_FLAG_MASK = 			0b00000010;
+    const uint8_t INTERRUPT_DISABLE_MASK = 	0b00000100;
+    const uint8_t DECIMAL_MODE_MASK = 		0b00001000;
+    const uint8_t BREAK_COMMAND_MASK = 		0b00010000;
+    //const uint8_t UNUSED_MASK = 			0b00100000;
+    const uint8_t OVERFLOW_FLAG_MASK = 		0b01000000;
+    const uint8_t NEGATIVE_FLAG_MASK =		0b10000000;
 
 	uint8_t regAccumulator = 0;								// (A)
 	uint8_t regX = 0;										// (X)
 	uint8_t regY = 0;										// (Y)
-	uint8_t regStatus = 0;									// (P)		byte = Negative, Overflow, _, Break, Decimal, Interrupt, Zero, Carry
+	uint8_t regStatus = 0b00000000;							// (P) byte = Negative, Overflow, _, Break, Decimal, Interrupt, Zero, Carry
 	uint8_t stackPointer = STACK_POINTER_START;				// (S) Stack is stored top -> bottom ($01FF -> $0100)
 	uint16_t programCounter = 0; 							// (PC)
 	uint8_t* memory;										// pointer to NesSystem memory
@@ -123,6 +121,22 @@ private:
 	int brk();      // BRK - break / interrupt
 	int nop();      // NOP - no operation
 	int rti();      // RTI - return from interrupt
+
+    // Status Flag operations
+    void setCarryFlag(bool flag);
+    bool isCarryFlag();
+    void setZeroFlag(bool flag);
+    bool isZeroFlag();
+    void setInterruptFlag(bool flag);
+    bool isInterruptFlag();
+    void setDecimalFlag(bool flag);
+    bool isDecimalFlag();
+    void setBreakCommand(bool flag);
+    bool isBreakCommand();
+    void setOverflowFlag(bool flag);
+    bool isOverflowFlag();
+    void setNegativeFlag(bool flag);
+    bool isNegativeFlag();
 
     void incProgramCounter(uint8_t opSize);
 
