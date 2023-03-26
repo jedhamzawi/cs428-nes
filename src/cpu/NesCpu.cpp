@@ -65,6 +65,19 @@ int NesCpu::execute(const Instruction &instruction) {
             sty(instruction.getOperand());
             break;
 
+        case Mnemonic::TAX:
+            tax();
+            break;
+        case Mnemonic::TAY:
+            tay();
+            break;
+        case Mnemonic::TXA:
+            txa();
+            break;
+        case Mnemonic::TYA:
+            tya();
+            break;
+
         case Mnemonic::ADC:
             adc(instruction.getOperand());
             break;
@@ -125,14 +138,23 @@ int NesCpu::execute(const Instruction &instruction) {
 
 // Load/Store
 int NesCpu::lda(const uint8_t &operand) {
+    this->zeroFlag = operand == 0;
+    this->negativeFlag = operand & 0x80;
+
     this->regAccumulator = operand;
 }
 
 int NesCpu::ldx(const uint8_t &operand) {
+    this->zeroFlag = operand == 0;
+    this->negativeFlag = operand & 0x80;
+
     this->regX = operand;
 }
 
 int NesCpu::ldy(const uint8_t &operand) {
+    this->zeroFlag = operand == 0;
+    this->negativeFlag = operand & 0x80;
+
     this->regY = operand;
 }
 
@@ -146,6 +168,35 @@ int NesCpu::stx(const uint8_t &operand) {
 
 int NesCpu::sty(const uint8_t &operand) {
     this->memory[operand] = this->regY;
+}
+
+// Transfer Registers
+int NesCpu::tax() {
+    this->zeroFlag = this->regAccumulator == 0;
+    this->negativeFlag = this->regAccumulator & 0x80;
+
+    this->regX = this->regAccumulator;
+}
+
+int NesCpu::tay() {
+    this->zeroFlag = this->regAccumulator == 0;
+    this->negativeFlag = this->regAccumulator & 0x80;
+
+    this->regY = this->regAccumulator;
+}
+
+int NesCpu::txa() {
+    this->zeroFlag = this->regX == 0;
+    this->negativeFlag = this->regX & 0x80;
+
+    this->regAccumulator = this->regX;
+}
+
+int NesCpu::tya() {
+    this->zeroFlag = this->regY == 0;
+    this->negativeFlag = this->regY & 0x80;
+
+    this->regAccumulator = this->regY;
 }
 
 // Arithmetic
