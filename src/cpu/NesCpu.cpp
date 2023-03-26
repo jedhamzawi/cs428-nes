@@ -97,6 +97,19 @@ int NesCpu::execute(const Instruction &instruction) {
             plp();
             break;
 
+        case Mnemonic::AND:
+            anda(instruction.getOperand());
+            break;
+        case Mnemonic::EOR:
+            eor(instruction.getOperand());
+            break;
+        case Mnemonic::ORA:
+            ora(instruction.getOperand());
+            break;
+        case Mnemonic::BIT:
+            bit(instruction.getOperand());
+            break;
+
         case Mnemonic::ADC:
             adc(instruction.getOperand());
             break;
@@ -275,6 +288,36 @@ int NesCpu::plp() {
     this->stackPointer++;
 }
 
+// Logical
+int NesCpu::anda(const uint8_t &operand) {
+    uint8_t result = this->regAccumulator & operand;
+    setZeroFlag(result == 0);
+    setNegativeFlag(result & 0x80);
+
+    this->regAccumulator = result;
+}
+
+int NesCpu::eor(const uint8_t &operand) {
+    uint8_t result = this->regAccumulator ^ operand;
+    setZeroFlag(result == 0);
+    setNegativeFlag(result & 0x80);
+
+    this->regAccumulator = result;
+}
+
+int NesCpu::ora(const uint8_t &operand) {
+    uint8_t result = this->regAccumulator | operand;
+    setZeroFlag(result == 0);
+    setNegativeFlag(result & 0x80);
+
+    this->regAccumulator = result;
+}
+
+int NesCpu::bit(const uint8_t &operand) {
+    setNegativeFlag(operand & 0x80);
+    setOverflowFlag(operand & 0x40);
+    setZeroFlag(this->regAccumulator & operand);
+}
 
 // Arithmetic
 int NesCpu::adc(const uint8_t &operand) {

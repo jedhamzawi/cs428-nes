@@ -65,10 +65,10 @@ private:
 	int plp();      // PLP - pull processor status (SR)
 
 	// Logical
-	int anda();      // AND - and (with accumulator)
-	int eor();      // EOR - exclusive or (with accumulator)
-	int ora();      // ORA - or with accumulator
-	int bit();      // BIT - bit test
+	int anda(const uint8_t &operand);     // AND - and (with accumulator)
+	int eor(const uint8_t &operand);      // EOR - exclusive or (with accumulator)
+	int ora(const uint8_t &operand);      // ORA - or with accumulator
+	int bit(const uint8_t &operand);      // BIT - bit test
 
 	// Arithmetic
 	int adc(const uint8_t &operand);      // ADC - add with carry
