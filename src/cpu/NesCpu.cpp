@@ -16,8 +16,20 @@ void NesCpu::step() {
         // TODO: Remove demo or log
         std::cout << "  " << instruction.getOpcode().getMnemonicString();
         uint8_t operand = getOperand(instruction.getOperandAddress());
-        if (operand != '\0') {
-            std::cout << " 0x" << 0u + operand;
+        if (instruction.getOpcode().getAddressingMode() != AddressingMode::IMPLIED ||
+            instruction.getOpcode().getMnemonic() == Mnemonic::JMP ||
+            instruction.getOpcode().getMnemonic() == Mnemonic::JSR ||
+            instruction.getOpcode().getMnemonic() == Mnemonic::STA ||
+            instruction.getOpcode().getMnemonic() == Mnemonic::STX ||
+            instruction.getOpcode().getMnemonic() == Mnemonic::STY) {
+
+            std::cout << " 0x" << 0u + instruction.getOperandAddress();
+        } else if (operand != '\0') {
+            if (instruction.getOpcode().getAddressingMode() == AddressingMode::RELATIVE) {
+                std::cout << " 0x" << (int)operand;
+            } else {
+                std::cout << " 0x" << 0u + operand;
+            }
         }
         std::cout << std::endl;
 
@@ -46,6 +58,7 @@ Instruction NesCpu::fetch() {
 int NesCpu::execute(const Instruction &instruction) {
     // TODO: IMPORTANT, move PC in each instruction (I think the Opcode::getNumBytes() will tell you how much)
     bool jumped = false;
+    bool branched = false;
 
     switch(instruction.getOpcode().getMnemonic()) {
 
@@ -191,7 +204,30 @@ int NesCpu::execute(const Instruction &instruction) {
             jumped = true;
             break;
 
-        // Other instructions...
+        case Mnemonic::BCC:
+            branched = bcc((int8_t)getOperand(instruction.getOperandAddress()));
+            break;
+        case Mnemonic::BCS:
+            branched = bcs((int8_t)getOperand(instruction.getOperandAddress()));
+            break;
+        case Mnemonic::BEQ:
+            branched = beq((int8_t)getOperand(instruction.getOperandAddress()));
+            break;
+        case Mnemonic::BMI:
+            branched = bmi((int8_t)getOperand(instruction.getOperandAddress()));
+            break;
+        case Mnemonic::BNE:
+            branched = bne((int8_t)getOperand(instruction.getOperandAddress()));
+            break;
+        case Mnemonic::BPL:
+            branched = bpl((int8_t)getOperand(instruction.getOperandAddress()));
+            break;
+        case Mnemonic::BVC:
+            branched = bvc((int8_t)getOperand(instruction.getOperandAddress()));
+            break;
+        case Mnemonic::BVS:
+            branched = bvs((int8_t)getOperand(instruction.getOperandAddress()));
+            break;
 
         // Status Flags
         case Mnemonic::CLC:
@@ -216,7 +252,6 @@ int NesCpu::execute(const Instruction &instruction) {
             sei();
             break;
 
-        // TODO: set jumped flag if performed JMP, BRN, RET or other jump operation
         default:
             // Unknown opcode, handle error here
             break;
@@ -226,7 +261,7 @@ int NesCpu::execute(const Instruction &instruction) {
         incProgramCounter(instruction.getOpcode().getNumBytes());
     }
 
-    return instruction.getOpcode().getNumCycles() + instruction.getPageBoundaryCost();
+    return instruction.getOpcode().getNumCycles() + instruction.getPageBoundaryCost() + branched;
 }
 
 uint8_t NesCpu::read(uint16_t addr) {
@@ -252,14 +287,14 @@ void NesCpu::writeWordToLittleEndian(uint16_t addr, uint16_t val) {
 
 uint8_t NesCpu::pullFromStack() {
     // TODO: On pull when reached end, should "wrap around" to 0x00"?
-    uint8_t value = memory[stackPointer];
+    uint8_t value = memory[0x100 | stackPointer];
     stackPointer++;
     return value;
 }
 
 void NesCpu::pushToStack(uint8_t value) {
     // TODO: Use read/write functions rather than explicitly manipulating memory array
-    memory[stackPointer] = value;
+    memory[0x100 | stackPointer] = value;
     stackPointer--;
 }
 
@@ -392,6 +427,10 @@ uint16_t NesCpu::getOperandAddress(AddressingMode mode, short& pageBoundaryCost)
 
             operandAddress = targetAddress;
             break;
+        }
+        case AddressingMode::RELATIVE: {
+            // TODO: Check if page boundary crossed
+            operandAddress = operandAddressLocation;
         }
         default:
             break;
@@ -744,6 +783,71 @@ int NesCpu::rts() {
     uint8_t pcLow = pullFromStack();
     uint8_t pcHigh = pullFromStack();
     programCounter = ((uint16_t)pcHigh << 8 | pcLow) + 1;
+}
+
+// Branches
+bool NesCpu::bcc(const int8_t &offset) {
+    if (!isCarryFlag()) {
+        programCounter += offset;
+        return true;
+    }
+    return false;
+}
+
+bool NesCpu::bcs(const int8_t &offset) {
+    if (isCarryFlag()) {
+        programCounter += offset;
+        return true;
+    }
+    return false;
+}
+
+bool NesCpu::beq(const int8_t &offset) {
+    if (isZeroFlag()) {
+        programCounter += offset;
+        return true;
+    }
+    return false;
+}
+
+bool NesCpu::bmi(const int8_t &offset) {
+    if (isNegativeFlag()) {
+        programCounter += offset;
+        return true;
+    }
+    return false;
+}
+
+bool NesCpu::bne(const int8_t &offset) {
+    if (!isZeroFlag()) {
+        programCounter += offset;
+        return true;
+    }
+    return false;
+}
+
+bool NesCpu::bpl(const int8_t &offset) {
+    if (!isNegativeFlag()) {
+        programCounter += offset;
+        return true;
+    }
+    return false;
+}
+
+bool NesCpu::bvc(const int8_t &offset) {
+    if (!isOverflowFlag()) {
+        programCounter += offset;
+        return true;
+    }
+    return false;
+}
+
+bool NesCpu::bvs(const int8_t &offset) {
+    if (isOverflowFlag()) {
+        programCounter += offset;
+        return true;
+    }
+    return false;
 }
 
 // Status Flag Changes

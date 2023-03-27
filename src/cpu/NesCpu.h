@@ -45,9 +45,9 @@ private:
 	static bool hasOverflow(uint8_t input1, uint8_t input2, uint8_t result);
 
 	// Load/Store Operations
-    int lda(const uint8_t &operand);      // LDA - load accumulator
-	int ldx(const uint8_t &operand);      // LDX - load X
-	int ldy(const uint8_t &operand);      // LDY - load Y
+    int lda(const uint8_t &operand);              // LDA - load accumulator
+	int ldx(const uint8_t &operand);              // LDX - load X
+	int ldy(const uint8_t &operand);              // LDY - load Y
 	int sta(const uint16_t &operandAddress);      // STA - store accumulator
 	int stx(const uint16_t &operandAddress);      // STX - store X
 	int sty(const uint16_t &operandAddress);      // STY - store Y
@@ -67,27 +67,27 @@ private:
 	int plp();      // PLP - pull processor status (SR)
 
 	// Logical
-	int anda(const uint8_t &operand);     // AND - and (with accumulator)
-	int eor(const uint8_t &operand);      // EOR - exclusive or (with accumulator)
-	int ora(const uint8_t &operand);      // ORA - or with accumulator
-	int bit(const uint8_t &operand);      // BIT - bit test
+	int anda(const uint8_t &operand);             // AND - and (with accumulator)
+	int eor(const uint8_t &operand);              // EOR - exclusive or (with accumulator)
+	int ora(const uint8_t &operand);              // ORA - or with accumulator
+	int bit(const uint8_t &operand);              // BIT - bit test
 
 	// Arithmetic
-	int adc(const uint8_t &operand);      // ADC - add with carry
-	int sbc(const uint8_t &operand);      // SBC - subtract with carry
+	int adc(const uint8_t &operand);              // ADC - add with carry
+	int sbc(const uint8_t &operand);              // SBC - subtract with carry
 
     // Compare
-	int cmp(const uint8_t &operand);      // CMP - compare (with accumulator)
-	int cpx(const uint8_t &operand);      // CPX - compare with X
-	int cpy(const uint8_t &operand);      // CPY - compare with Y
+	int cmp(const uint8_t &operand);              // CMP - compare (with accumulator)
+	int cpx(const uint8_t &operand);              // CPX - compare with X
+	int cpy(const uint8_t &operand);              // CPY - compare with Y
 
 	// Increments and Decrements
 	int inc(const uint16_t &operandAddress);      // INC - increment
-	int inx();                            // INX - increment X
-	int iny();                            // INY - increment Y
+	int inx();                                    // INX - increment X
+	int iny();                                    // INY - increment Y
 	int dec(const uint16_t &operandAddress);      // DEC - decrement
-	int dex();                            // DEX - decrement X
-	int dey();                            // DEY - decrement Y
+	int dex();                                    // DEX - decrement X
+	int dey();                                    // DEY - decrement Y
 
 	// Shifts
     int asl(const uint16_t &operandAddress);      // ASL - arithmetic shift left (memory)
@@ -100,19 +100,19 @@ private:
     int rora();                                   // ROR - rotate right (accumulator)
 
 	// Jumps and Calls
-	int jmp(const uint16_t &address);      // JMP - jump
-	int jsr(const uint16_t &address);      // JSR - jump subroutine
-	int rts();                            // RTS - return from subroutine
+	int jmp(const uint16_t &address);             // JMP - jump
+	int jsr(const uint16_t &address);             // JSR - jump subroutine
+	int rts();                                    // RTS - return from subroutine
 
 	// Branches
-	int bcc();      // BCC - branch on carry clear
-	int bcs();      // BCS - branch on carry set
-	int beq();      // BEQ - branch on equal (zero set)
-	int bmi();      // BMI - branch on minus (negative set)
-	int bne();      // BNE - branch on not equal (zero clear)
-	int bpl();      // BPL - branch on plus (negative clear)
-	int bvc();      // BVC - branch on overflow clear
-	int bvs();      // BVS - branch on overflow set
+    bool bcc(const int8_t &offset);      // BCC - branch on carry clear
+	bool bcs(const int8_t &offset);      // BCS - branch on carry set
+	bool beq(const int8_t &offset);      // BEQ - branch on equal (zero set)
+	bool bmi(const int8_t &offset);      // BMI - branch on minus (negative set)
+	bool bne(const int8_t &offset);      // BNE - branch on not equal (zero clear)
+	bool bpl(const int8_t &offset);      // BPL - branch on plus (negative clear)
+	bool bvc(const int8_t &offset);      // BVC - branch on overflow clear
+	bool bvs(const int8_t &offset);      // BVS - branch on overflow set
 
 	// Status Flag Changes
 	int clc();      // CLC - clear carry
