@@ -36,12 +36,13 @@ private:
 	uint16_t readWordToBigEndian(uint16_t addr);			// Reads low then high and returns reordered ($00 $80 => $8000)
 	void write(uint16_t addr, uint8_t val);
 	void writeWordToLittleEndian(uint16_t addr, uint16_t val);
+    uint8_t pullFromStack();
+    void pushToStack(uint8_t value);
 
 	uint16_t getOperandAddress(AddressingMode mode, short& pageBoundaryCost);
     uint8_t getOperand(const uint16_t &operandAddress);
 	static bool isPageBoundaryCrossed(uint16_t addr1, uint16_t addr2);
 	static bool hasOverflow(uint8_t input1, uint8_t input2, uint8_t result);
-
 
 	// Load/Store Operations
     int lda(const uint8_t &operand);      // LDA - load accumulator
@@ -99,9 +100,9 @@ private:
     int rora();                                   // ROR - rotate right (accumulator)
 
 	// Jumps and Calls
-	int jmp();      // JMP - jump
-	int jsr();      // JSR - jump subroutine
-	int rts();      // RTS - return from subroutine
+	int jmp(const uint16_t &address);      // JMP - jump
+	int jsr(const uint16_t &address);      // JSR - jump subroutine
+	int rts();                            // RTS - return from subroutine
 
 	// Branches
 	int bcc();      // BCC - branch on carry clear
