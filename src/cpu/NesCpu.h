@@ -37,7 +37,8 @@ private:
 	void write(uint16_t addr, uint8_t val);
 	void writeWordToLittleEndian(uint16_t addr, uint16_t val);
 
-	uint8_t getOperand(AddressingMode mode, short& pageBoundaryCost);
+	uint16_t getOperandAddress(AddressingMode mode, short& pageBoundaryCost);
+    uint8_t getOperand(const uint16_t &operandAddress);
 	static bool isPageBoundaryCrossed(uint16_t addr1, uint16_t addr2);
 	static bool hasOverflow(uint8_t input1, uint8_t input2, uint8_t result);
 
@@ -46,9 +47,9 @@ private:
     int lda(const uint8_t &operand);      // LDA - load accumulator
 	int ldx(const uint8_t &operand);      // LDX - load X
 	int ldy(const uint8_t &operand);      // LDY - load Y
-	int sta(const uint8_t &operand);      // STA - store accumulator
-	int stx(const uint8_t &operand);      // STX - store X
-	int sty(const uint8_t &operand);      // STY - store Y
+	int sta(const uint16_t &operandAddress);      // STA - store accumulator
+	int stx(const uint16_t &operandAddress);      // STX - store X
+	int sty(const uint16_t &operandAddress);      // STY - store Y
 
 	// Register Transfers
 	int tax();      // TAX - transfer accumulator to X
@@ -80,18 +81,22 @@ private:
 	int cpy(const uint8_t &operand);      // CPY - compare with Y
 
 	// Increments and Decrements
-	int inc(const uint8_t &operand);      // INC - increment
-	int inx();      // INX - increment X
-	int iny();      // INY - increment Y
-	int dec(const uint8_t &operand);      // DEC - decrement
-	int dex();      // DEX - decrement X
-	int dey();      // DEY - decrement Y
+	int inc(const uint16_t &operandAddress);      // INC - increment
+	int inx();                            // INX - increment X
+	int iny();                            // INY - increment Y
+	int dec(const uint16_t &operandAddress);      // DEC - decrement
+	int dex();                            // DEX - decrement X
+	int dey();                            // DEY - decrement Y
 
 	// Shifts
-	int asl();      // ASL - arithmetic shift left
-	int lsr();      // LSR - logical shift right
-	int rol();      // ROL - rotate left
-	int ror();      // ROR - rotate right
+    int asl(const uint16_t &operandAddress);      // ASL - arithmetic shift left (memory)
+    int asla();                                   // ASL - arithmetic shift left (accumulator)
+	int lsr(const uint16_t &operandAddress);      // LSR - logical shift right (memory)
+    int lsra();                                   // LSR - logical shift right (accumulator)
+	int rol(const uint16_t &operandAddress);      // ROL - rotate left (memory)
+    int rola();                                   // ROL - rotate left (accumulator)
+	int ror(const uint16_t &operandAddress);      // ROR - rotate right
+    int rora();                                   // ROR - rotate right (accumulator)
 
 	// Jumps and Calls
 	int jmp();      // JMP - jump

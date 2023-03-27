@@ -15,8 +15,9 @@ void NesCpu::step() {
 
         // TODO: Remove demo or log
         std::cout << "  " << instruction.getOpcode().getMnemonicString();
-        if (instruction.getOperand() != 0) {
-            std::cout << " 0x" << 0u + instruction.getOperand();
+        uint8_t operand = getOperand(instruction.getOperandAddress());
+        if (operand != '\0') {
+            std::cout << " 0x" << 0u + operand;
         }
         std::cout << std::endl;
 
@@ -36,33 +37,36 @@ Instruction NesCpu::fetch() {
     Opcode opcode = OpcodeTable::getOpcode(opcodeByte);
 
     short pageBoundaryCost = 0;
-    uint8_t operand = getOperand(opcode.getAddressingMode(), pageBoundaryCost);
 
-    return {opcode, operand, pageBoundaryCost};
+    uint16_t operandAddress = getOperandAddress(opcode.getAddressingMode(), pageBoundaryCost);
+
+    return {opcode, operandAddress, pageBoundaryCost};
 }
 
 int NesCpu::execute(const Instruction &instruction) {
     // TODO: IMPORTANT, move PC in each instruction (I think the Opcode::getNumBytes() will tell you how much)
     bool jumped = false;
+    uint8_t operand = getOperand(instruction.getOperandAddress());
+
     switch(instruction.getOpcode().getMnemonic()) {
 
         case Mnemonic::LDA:
-            lda(instruction.getOperand());
+            lda(getOperand(instruction.getOperandAddress()));
             break;
         case Mnemonic::LDX:
-            ldx(instruction.getOperand());
+            ldx(getOperand(instruction.getOperandAddress()));
             break;
         case Mnemonic::LDY:
-            ldy(instruction.getOperand());
+            ldy(getOperand(instruction.getOperandAddress()));
             break;
         case Mnemonic::STA:
-            sta(instruction.getOperand());
+            sta(instruction.getOperandAddress());
             break;
         case Mnemonic::STX:
-            stx(instruction.getOperand());
+            stx(instruction.getOperandAddress());
             break;
         case Mnemonic::STY:
-            sty(instruction.getOperand());
+            sty(instruction.getOperandAddress());
             break;
 
         case Mnemonic::TAX:
@@ -98,37 +102,37 @@ int NesCpu::execute(const Instruction &instruction) {
             break;
 
         case Mnemonic::AND:
-            anda(instruction.getOperand());
+            anda(getOperand(instruction.getOperandAddress()));
             break;
         case Mnemonic::EOR:
-            eor(instruction.getOperand());
+            eor(getOperand(instruction.getOperandAddress()));
             break;
         case Mnemonic::ORA:
-            ora(instruction.getOperand());
+            ora(getOperand(instruction.getOperandAddress()));
             break;
         case Mnemonic::BIT:
-            bit(instruction.getOperand());
+            bit(getOperand(instruction.getOperandAddress()));
             break;
 
         case Mnemonic::ADC:
-            adc(instruction.getOperand());
+            adc(getOperand(instruction.getOperandAddress()));
             break;
         case Mnemonic::SBC:
-            sbc(instruction.getOperand());
+            sbc(getOperand(instruction.getOperandAddress()));
             break;
 
         case Mnemonic::CMP:
-            cmp(instruction.getOperand());
+            cmp(getOperand(instruction.getOperandAddress()));
             break;
         case Mnemonic::CPX:
-            cpx(instruction.getOperand());
+            cpx(getOperand(instruction.getOperandAddress()));
             break;
         case Mnemonic::CPY:
-            cpy(instruction.getOperand());
+            cpy(getOperand(instruction.getOperandAddress()));
             break;
 
         case Mnemonic::INC:
-            inc(instruction.getOperand());
+            inc(instruction.getOperandAddress());
             break;
         case Mnemonic::INX:
             inx();
@@ -137,13 +141,42 @@ int NesCpu::execute(const Instruction &instruction) {
             iny();
             break;
         case Mnemonic::DEC:
-            dec(instruction.getOperand());
+            dec(instruction.getOperandAddress());
             break;
         case Mnemonic::DEX:
             dex();
             break;
         case Mnemonic::DEY:
             dey();
+            break;
+
+        case Mnemonic::ASL:
+            if (instruction.getOpcode().getAddressingMode() == AddressingMode:: ACCUMULATOR) {
+                asla();
+                break;
+            }
+            asl(instruction.getOperandAddress());
+            break;
+        case Mnemonic::LSR:
+            if (instruction.getOpcode().getAddressingMode() == AddressingMode:: ACCUMULATOR) {
+                lsra();
+                break;
+            }
+            lsr(instruction.getOperandAddress());
+            break;
+        case Mnemonic::ROL:
+            if (instruction.getOpcode().getAddressingMode() == AddressingMode:: ACCUMULATOR) {
+                rola();
+                break;
+            }
+            rol(instruction.getOperandAddress());
+            break;
+        case Mnemonic::ROR:
+            if (instruction.getOpcode().getAddressingMode() == AddressingMode:: ACCUMULATOR) {
+                rora();
+                break;
+            }
+            ror(instruction.getOperandAddress());
             break;
 
         // Other instructions...
@@ -209,16 +242,16 @@ int NesCpu::ldy(const uint8_t &operand) {
     this->regY = operand;
 }
 
-int NesCpu::sta(const uint8_t &operand) {
-    this->memory[operand] = this->regAccumulator;
+int NesCpu::sta(const uint16_t &operandAddress) {
+    this->memory[operandAddress] = this->regAccumulator;
 }
 
-int NesCpu::stx(const uint8_t &operand) {
-    this->memory[operand] = this->regX;
+int NesCpu::stx(const uint16_t &operandAddress) {
+    this->memory[operandAddress] = this->regX;
 }
 
-int NesCpu::sty(const uint8_t &operand) {
-    this->memory[operand] = this->regY;
+int NesCpu::sty(const uint16_t &operandAddress) {
+    this->memory[operandAddress] = this->regY;
 }
 
 // Transfer Registers
@@ -365,12 +398,12 @@ int NesCpu::cpy(const uint8_t &operand) {
     setNegativeFlag(result & 0x80);
 }
 
-int NesCpu::inc(const uint8_t &operand) {
-    uint8_t result = this->memory[operand] + 1;
+int NesCpu::inc(const uint16_t &operandAddress) {
+    uint8_t result = this->memory[operandAddress] + 1;
     setZeroFlag(result == 0);
     setNegativeFlag(result & 0x80);
 
-    this->memory[operand] = result;
+    this->memory[operandAddress] = result;
 }
 
 // Increments/Decrements
@@ -386,12 +419,12 @@ int NesCpu::iny() {
     setNegativeFlag(this->regY & 0x80);
 }
 
-int NesCpu::dec(const uint8_t &operand) {
-    uint8_t result = this->memory[operand] - 1;
+int NesCpu::dec(const uint16_t &operandAddress) {
+    uint8_t result = this->memory[operandAddress] - 1;
     setZeroFlag(result == 0);
     setNegativeFlag(result & 0x80);
 
-    this->memory[operand] = result;
+    this->memory[operandAddress] = result;
 }
 
 int NesCpu::dex() {
@@ -404,6 +437,91 @@ int NesCpu::dey() {
     this->regY--;
     setZeroFlag(this->regY == 0);
     setNegativeFlag(this->regY & 0x80);
+}
+
+// Shifts/Rotations
+int NesCpu::asl(const uint16_t &operandAddress) {
+    uint8_t operand = this->memory[operandAddress];
+    setCarryFlag(operand & 0x80);
+    operand = operand << 1;
+    setZeroFlag(operand == 0);
+    setNegativeFlag(operand & 0x80);
+
+    this->memory[operandAddress] = operand;
+}
+
+int NesCpu::asla() {;
+    setCarryFlag(this->regAccumulator & 0x80);
+    this->regAccumulator = this->regAccumulator << 1;
+    setZeroFlag(this->regAccumulator == 0);
+    setNegativeFlag(this->regAccumulator & 0x80);
+}
+
+int NesCpu::lsr(const uint16_t &operandAddress) {
+    uint8_t operand = this->memory[operandAddress];
+    setCarryFlag(operand & 0x1);
+    operand = operand >> 1;
+    setZeroFlag(operand == 0);
+    setNegativeFlag(false);
+
+    this->memory[operandAddress] = operand;
+}
+
+int NesCpu::lsra() {
+    setCarryFlag(this->regAccumulator & 0x1);
+    this->regAccumulator = this->regAccumulator >> 1;
+    setZeroFlag(this->regAccumulator == 0);
+    setNegativeFlag(false);
+}
+
+int NesCpu::rol(const uint16_t &operandAddress) {
+    bool carryFlag = isCarryFlag();
+    uint8_t operand = this->memory[operandAddress];
+    setCarryFlag(operand & 0x80);
+    operand = operand << 1;
+    if (carryFlag) {
+        operand | 0x1;
+    }
+    setZeroFlag(operand == 0);
+    setNegativeFlag(operand & 0x80);
+
+    this->memory[operandAddress] = operand;
+}
+
+int NesCpu::rola() {
+    bool carryFlag = isCarryFlag();
+    setCarryFlag(this->regAccumulator & 0x80);
+    this->regAccumulator = this->regAccumulator << 1;
+    if (carryFlag) {
+        this->regAccumulator | 0x1;
+    }
+    setZeroFlag(this->regAccumulator == 0);
+    setNegativeFlag(this->regAccumulator & 0x80);
+}
+
+int NesCpu::ror(const uint16_t &operandAddress) {
+    bool carryFlag = isCarryFlag();
+    uint8_t operand = this->memory[operandAddress];
+    setCarryFlag(operand & 0x1);
+    operand = operand >> 1;
+    if (carryFlag) {
+        operand | 0x80;
+    }
+    setZeroFlag(operand == 0);
+    setNegativeFlag(carryFlag);
+
+    this->memory[operandAddress] = operand;
+}
+
+int NesCpu::rora() {
+    bool carryFlag = isCarryFlag();
+    setCarryFlag(this->regAccumulator & 0x1);
+    this->regAccumulator = this->regAccumulator >> 1;
+    if (carryFlag) {
+        this->regAccumulator | 0x80;
+    }
+    setZeroFlag(this->regAccumulator == 0);
+    setNegativeFlag(carryFlag);
 }
 
 // Status Flag Changes
@@ -472,54 +590,50 @@ int NesCpu::sei() {
  *               value represents an address (target address).
  * 
  **/
-uint8_t NesCpu::getOperand(AddressingMode mode, short& pageBoundaryCost) {
+uint16_t NesCpu::getOperandAddress(AddressingMode mode, short& pageBoundaryCost) {
     // FIXME: Something is wrong with addressing modes (likely having to do with little/big endian)
-    uint8_t operand;
-    uint16_t addressAfterOpcode = this->programCounter + 1;
+    uint16_t operandAddressLocation = this->programCounter + 1;
+    uint16_t operandAddress = '\0';
 
     switch (mode) {
-        case AddressingMode::IMPLIED: {
-            operand = '\0';
-            break;
-        }
         case AddressingMode::IMMEDIATE: {
-            operand = read(addressAfterOpcode);
+            operandAddress = operandAddressLocation;
             break;
         }
         case AddressingMode::ABSOLUTE: {
-            uint16_t absoluteAddress = readWordToBigEndian(addressAfterOpcode);
-            operand = read(absoluteAddress);
+            uint16_t absoluteAddress = readWordToBigEndian(operandAddressLocation);
+            operandAddress = absoluteAddress;
             break;
         }
         case AddressingMode::ABSOLUTE_X: {
-            uint16_t absoluteAddress = readWordToBigEndian(addressAfterOpcode);
+            uint16_t absoluteAddress = readWordToBigEndian(operandAddressLocation);
             uint16_t effectiveAddress = absoluteAddress + this->regX;
 
             if (isPageBoundaryCrossed(absoluteAddress, effectiveAddress)) {
                 pageBoundaryCost = 1;
             }
 
-            operand = read(effectiveAddress);
+            operandAddress = effectiveAddress;
             break;
         }
         case AddressingMode::ABSOLUTE_Y: {
-            uint16_t absoluteAddress = readWordToBigEndian(addressAfterOpcode);
+            uint16_t absoluteAddress = readWordToBigEndian(operandAddressLocation);
             uint16_t effectiveAddress = absoluteAddress + this->regY;
 
             if (isPageBoundaryCrossed(absoluteAddress, effectiveAddress)) {
                 pageBoundaryCost = 1;
             }
 
-            operand = read(effectiveAddress);
+            operandAddress = effectiveAddress;
             break;
         }
         case AddressingMode::ZERO_PAGE: {
-            uint8_t zeroPageAddress = read(addressAfterOpcode);
-            operand = read(zeroPageAddress);
+            uint8_t zeroPageAddress = read(operandAddressLocation);
+            operandAddress = (uint16_t)zeroPageAddress;
             break;
         }
         case AddressingMode::ZERO_PAGE_X: {
-            uint8_t zeroPageAddress = read(addressAfterOpcode);
+            uint8_t zeroPageAddress = read(operandAddressLocation);
             uint16_t effectiveAddress = zeroPageAddress + this->regX;
 
             if (isPageBoundaryCrossed(zeroPageAddress, effectiveAddress)) {
@@ -527,11 +641,11 @@ uint8_t NesCpu::getOperand(AddressingMode mode, short& pageBoundaryCost) {
                 pageBoundaryCost = 1;
             }
 
-            operand = read(effectiveAddress);
+            operandAddress = effectiveAddress;
             break;
         }
         case AddressingMode::ZERO_PAGE_Y: {
-            uint8_t zeroPageAddress = read(addressAfterOpcode);
+            uint8_t zeroPageAddress = read(operandAddressLocation);
             uint16_t effectiveAddress = zeroPageAddress + this->regY;
 
             if (isPageBoundaryCrossed(zeroPageAddress, effectiveAddress)) {
@@ -539,46 +653,50 @@ uint8_t NesCpu::getOperand(AddressingMode mode, short& pageBoundaryCost) {
                 pageBoundaryCost = 1;
             }
 
-            operand = read(effectiveAddress);
+            operandAddress = effectiveAddress;
             break;
         }
         case AddressingMode::INDIRECT: {
-            uint16_t indirectAddress = readWordToBigEndian(addressAfterOpcode);
-            uint16_t targetAddress = readWordToBigEndian(indirectAddress);
-            operand = targetAddress;
+            uint16_t indirectAddress = readWordToBigEndian(operandAddressLocation);
+            operandAddress = readWordToBigEndian(indirectAddress);
             break;
         }
         case AddressingMode::INDIRECT_X: {
-            uint16_t zeroPageAddress = read(addressAfterOpcode);
+            uint16_t zeroPageAddress = read(operandAddressLocation);
             uint16_t indirectAddress = zeroPageAddress + this->regX;
 
-            if (this->isPageBoundaryCrossed(zeroPageAddress, indirectAddress)) {
+            if (isPageBoundaryCrossed(zeroPageAddress, indirectAddress)) {
                 indirectAddress -= 0x0100;       // Zero page wrap
                 pageBoundaryCost = 1;
             }
-            uint16_t targetAddress = readWordToBigEndian(indirectAddress);
 
-            operand = targetAddress;
+            operandAddress = readWordToBigEndian(indirectAddress);
             break;
         }
         case AddressingMode::INDIRECT_Y: {
-            uint16_t zeroPageAddress = read(addressAfterOpcode);
+            uint16_t zeroPageAddress = read(operandAddressLocation);
             uint16_t tempAddress = readWordToBigEndian(zeroPageAddress);
             uint16_t targetAddress = tempAddress + this->regY;
 
-            if (this->isPageBoundaryCrossed(tempAddress, targetAddress)) {
+            if (isPageBoundaryCrossed(tempAddress, targetAddress)) {
                 targetAddress -= 0x0100;        // Zero page wrap
                 pageBoundaryCost = 1;
             }
 
-            operand = targetAddress;
+            operandAddress = targetAddress;
             break;
         }
         default:
-            // TODO: error handling
             break;
     }
-    return operand;
+    return operandAddress;
+}
+
+uint8_t NesCpu::getOperand(const uint16_t &operandAddress) {
+    if (operandAddress != '\0') {
+        return read(operandAddress);
+    }
+    return '\0';
 }
 
 
