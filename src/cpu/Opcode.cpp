@@ -2,25 +2,29 @@
 
 #include <utility>
 
-Opcode::Opcode(std::string  mnemonic, AddressingMode mode, uint8_t bytes, uint8_t cycles)
+Opcode::Opcode(Mnemonic mnemonic, AddressingMode mode, short numBytes, short numCycles)
     // Initializer List
-    : mnemonic(std::move(mnemonic))
+    : mnemonic(mnemonic)
     , mode(mode)
-    , bytes(bytes)
-    , cycles(cycles) {}
+    , numBytes(numBytes)
+    , numCycles(numCycles) {}
 
-std::string Opcode::getMnemonic() const {
+Mnemonic Opcode::getMnemonic() const {
     return mnemonic;
+}
+
+std::string Opcode::getMnemonicString() const {
+    return MNEMONIC_STRINGS[this->mnemonic];
 }
 
 AddressingMode Opcode::getAddressingMode() const {
     return mode;
 }
 
-uint8_t Opcode::getBytes() const {
-    return bytes;
+short Opcode::getNumBytes() const {
+    return numBytes;
 }
 
-uint8_t Opcode::getCycles() const {
-    return cycles;
+short Opcode::getNumCycles() const {
+    return numCycles;
 }
