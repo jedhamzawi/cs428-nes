@@ -1,6 +1,5 @@
 #include <chrono>
 #include <thread>
-#include <iterator>
 #include <bits/stdc++.h>
 
 #include "NesSystem.h"

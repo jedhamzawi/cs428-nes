@@ -287,8 +287,8 @@ void NesCpu::writeWordToLittleEndian(uint16_t addr, uint16_t val) {
 
 uint8_t NesCpu::pullFromStack() {
     // TODO: On pull when reached end, should "wrap around" to 0x00"?
-    uint8_t value = memory[0x100 | stackPointer];
     stackPointer++;
+    uint8_t value = memory[0x100 | stackPointer];
     return value;
 }
 
