@@ -45,88 +45,88 @@ private:
 	static bool hasOverflow(uint8_t input1, uint8_t input2, uint8_t result);
 
 	// Load/Store Operations
-    int lda(const uint8_t &operand);              // LDA - load accumulator
-	int ldx(const uint8_t &operand);              // LDX - load X
-	int ldy(const uint8_t &operand);              // LDY - load Y
-	int sta(const uint16_t &operandAddress);      // STA - store accumulator
-	int stx(const uint16_t &operandAddress);      // STX - store X
-	int sty(const uint16_t &operandAddress);      // STY - store Y
+    void lda(const uint8_t &operand);              // LDA - load accumulator
+	void ldx(const uint8_t &operand);              // LDX - load X
+	void ldy(const uint8_t &operand);              // LDY - load Y
+	void sta(const uint16_t &operandAddress);      // STA - store accumulator
+	void stx(const uint16_t &operandAddress);      // STX - store X
+	void sty(const uint16_t &operandAddress);      // STY - store Y
 
 	// Register Transfers
-	int tax();      // TAX - transfer accumulator to X
-	int tay();      // TAY - transfer accumulator to Y
-	int txa();      // TXA - transfer X to accumulator
-	int tya();      // TYA - transfer Y to accumulator
+    void tax();      // TAX - transfer accumulator to X
+	void tay();      // TAY - transfer accumulator to Y
+	void txa();      // TXA - transfer X to accumulator
+	void tya();      // TYA - transfer Y to accumulator
 
 	// Stack Operations
-	int tsx();      // TSX - transfer stack pointer to X
-	int txs();      // TXS - transfer X to stack pointer
-	int pha();      // PHA - push accumulator
-	int php();      // PHP - push processor status (SR)
-	int pla();      // PLA - pull accumulator
-	int plp();      // PLP - pull processor status (SR)
+    void tsx();      // TSX - transfer stack pointer to X
+	void txs();      // TXS - transfer X to stack pointer
+	void pha();      // PHA - push accumulator
+	void php();      // PHP - push processor status (SR)
+	void pla();      // PLA - pull accumulator
+	void plp();      // PLP - pull processor status (SR)
 
 	// Logical
-	int anda(const uint8_t &operand);             // AND - and (with accumulator)
-	int eor(const uint8_t &operand);              // EOR - exclusive or (with accumulator)
-	int ora(const uint8_t &operand);              // ORA - or with accumulator
-	int bit(const uint8_t &operand);              // BIT - bit test
+    void anda(const uint8_t &operand);             // AND - and (with accumulator)
+	void eor(const uint8_t &operand);              // EOR - exclusive or (with accumulator)
+	void ora(const uint8_t &operand);              // ORA - or with accumulator
+	void bit(const uint8_t &operand);              // BIT - bit test
 
 	// Arithmetic
-	int adc(const uint8_t &operand);              // ADC - add with carry
-	int sbc(const uint8_t &operand);              // SBC - subtract with carry
+    void adc(const uint8_t &operand);              // ADC - add with carry
+	void sbc(const uint8_t &operand);              // SBC - subtract with carry
 
     // Compare
-	int cmp(const uint8_t &operand);              // CMP - compare (with accumulator)
-	int cpx(const uint8_t &operand);              // CPX - compare with X
-	int cpy(const uint8_t &operand);              // CPY - compare with Y
+    void cmp(const uint8_t &operand);              // CMP - compare (with accumulator)
+	void cpx(const uint8_t &operand);              // CPX - compare with X
+	void cpy(const uint8_t &operand);              // CPY - compare with Y
 
 	// Increments and Decrements
-	int inc(const uint16_t &operandAddress);      // INC - increment
-	int inx();                                    // INX - increment X
-	int iny();                                    // INY - increment Y
-	int dec(const uint16_t &operandAddress);      // DEC - decrement
-	int dex();                                    // DEX - decrement X
-	int dey();                                    // DEY - decrement Y
+    void inc(const uint16_t &operandAddress);      // INC - increment
+	void inx();                                    // INX - increment X
+	void iny();                                    // INY - increment Y
+	void dec(const uint16_t &operandAddress);      // DEC - decrement
+	void dex();                                    // DEX - decrement X
+	void dey();                                    // DEY - decrement Y
 
 	// Shifts
-    int asl(const uint16_t &operandAddress);      // ASL - arithmetic shift left (memory)
-    int asla();                                   // ASL - arithmetic shift left (accumulator)
-	int lsr(const uint16_t &operandAddress);      // LSR - logical shift right (memory)
-    int lsra();                                   // LSR - logical shift right (accumulator)
-	int rol(const uint16_t &operandAddress);      // ROL - rotate left (memory)
-    int rola();                                   // ROL - rotate left (accumulator)
-	int ror(const uint16_t &operandAddress);      // ROR - rotate right
-    int rora();                                   // ROR - rotate right (accumulator)
+    void asl(const uint16_t &operandAddress);      // ASL - arithmetic shift left (memory)
+    void asla();                                   // ASL - arithmetic shift left (accumulator)
+	void lsr(const uint16_t &operandAddress);      // LSR - logical shift right (memory)
+    void lsra();                                   // LSR - logical shift right (accumulator)
+	void rol(const uint16_t &operandAddress);      // ROL - rotate left (memory)
+    void rola();                                   // ROL - rotate left (accumulator)
+	void ror(const uint16_t &operandAddress);      // ROR - rotate right
+    void rora();                                   // ROR - rotate right (accumulator)
 
 	// Jumps and Calls
-	int jmp(const uint16_t &address);             // JMP - jump
-	int jsr(const uint16_t &address);             // JSR - jump subroutine
-	int rts();                                    // RTS - return from subroutine
+    void jmp(const uint16_t &address);             // JMP - jump
+	void jsr(const uint16_t &address);             // JSR - jump subroutine
+	void rts();                                    // RTS - return from subroutine
 
 	// Branches
-    bool bcc(const int8_t &offset);      // BCC - branch on carry clear
-	bool bcs(const int8_t &offset);      // BCS - branch on carry set
-	bool beq(const int8_t &offset);      // BEQ - branch on equal (zero set)
-	bool bmi(const int8_t &offset);      // BMI - branch on minus (negative set)
-	bool bne(const int8_t &offset);      // BNE - branch on not equal (zero clear)
-	bool bpl(const int8_t &offset);      // BPL - branch on plus (negative clear)
-	bool bvc(const int8_t &offset);      // BVC - branch on overflow clear
-	bool bvs(const int8_t &offset);      // BVS - branch on overflow set
+    bool bcc(const int8_t &offset);                // BCC - branch on carry clear
+	bool bcs(const int8_t &offset);                // BCS - branch on carry set
+	bool beq(const int8_t &offset);                // BEQ - branch on equal (zero set)
+	bool bmi(const int8_t &offset);                // BMI - branch on minus (negative set)
+	bool bne(const int8_t &offset);                // BNE - branch on not equal (zero clear)
+	bool bpl(const int8_t &offset);                // BPL - branch on plus (negative clear)
+	bool bvc(const int8_t &offset);                // BVC - branch on overflow clear
+	bool bvs(const int8_t &offset);                // BVS - branch on overflow set
 
 	// Status Flag Changes
-	int clc();      // CLC - clear carry
-	int cld();      // CLD - clear decimal (decimal flag unused in NES)
-	int cli();      // CLI - clear interrupt disable
-	int clv();      // CLV - clear overflow
-	int sec();      // SEC - set carry
-	int sed();      // SED - set decimal (decimal flag unused in NES)
-	int sei();      // SEI - set interrupt disable
+    void clc();      // CLC - clear carry
+	void cld();      // CLD - clear decimal (decimal flag unused in NES)
+	void cli();      // CLI - clear interrupt disable
+	void clv();      // CLV - clear overflow
+	void sec();      // SEC - set carry
+	void sed();      // SED - set decimal (decimal flag unused in NES)
+	void sei();      // SEI - set interrupt disable
 
 	// System Functions
-	int brk();      // BRK - break / interrupt
-	int nop();      // NOP - no operation
-	int rti();      // RTI - return from interrupt
+    void brk();      // BRK - break / interrupt
+	void nop();      // NOP - no operation
+	void rti();      // RTI - return from interrupt
 
     // Status Flag operations
     void setCarryFlag(bool flag);

@@ -472,62 +472,62 @@ void NesCpu::incProgramCounter(uint8_t opSize) {
 // ======================== INSTRUCTIONS ======================== //
 
 // Load/Store
-int NesCpu::lda(const uint8_t &operand) {
+void NesCpu::lda(const uint8_t &operand) {
     setZeroFlag(operand == 0);
     setNegativeFlag(operand & 0x80);
 
     this->regAccumulator = operand;
 }
 
-int NesCpu::ldx(const uint8_t &operand) {
+void NesCpu::ldx(const uint8_t &operand) {
     setZeroFlag(operand == 0);
     setNegativeFlag(operand & 0x80);
 
     this->regX = operand;
 }
 
-int NesCpu::ldy(const uint8_t &operand) {
+void NesCpu::ldy(const uint8_t &operand) {
     setZeroFlag(operand == 0);
     setNegativeFlag(operand & 0x80);
 
     this->regY = operand;
 }
 
-int NesCpu::sta(const uint16_t &operandAddress) {
+void NesCpu::sta(const uint16_t &operandAddress) {
     this->memory[operandAddress] = this->regAccumulator;
 }
 
-int NesCpu::stx(const uint16_t &operandAddress) {
+void NesCpu::stx(const uint16_t &operandAddress) {
     this->memory[operandAddress] = this->regX;
 }
 
-int NesCpu::sty(const uint16_t &operandAddress) {
+void NesCpu::sty(const uint16_t &operandAddress) {
     this->memory[operandAddress] = this->regY;
 }
 
 // Transfer Registers
-int NesCpu::tax() {
+void NesCpu::tax() {
     setZeroFlag(this->regAccumulator == 0);
     setNegativeFlag(this->regAccumulator & 0x80);
 
     this->regX = this->regAccumulator;
 }
 
-int NesCpu::tay() {
+void NesCpu::tay() {
     setZeroFlag(this->regAccumulator == 0);
     setNegativeFlag(this->regAccumulator & 0x80);
 
     this->regY = this->regAccumulator;
 }
 
-int NesCpu::txa() {
+void NesCpu::txa() {
     setZeroFlag(this->regX == 0);
     setNegativeFlag(this->regX & 0x80);
 
     this->regAccumulator = this->regX;
 }
 
-int NesCpu::tya() {
+void NesCpu::tya() {
     setZeroFlag(this->regY == 0);
     setNegativeFlag(this->regY & 0x80);
 
@@ -535,38 +535,38 @@ int NesCpu::tya() {
 }
 
 // Stack Operations
-int NesCpu::tsx() {
+void NesCpu::tsx() {
     this->regX = this->stackPointer;
 
     setZeroFlag(this->regX == 0);
     setNegativeFlag(this->regX & 0x80);
 }
 
-int NesCpu::txs() {
+void NesCpu::txs() {
     this->stackPointer = this->regX;
 }
 
-int NesCpu::pha() {
+void NesCpu::pha() {
     pushToStack(regAccumulator);
 }
 
-int NesCpu::php() {
+void NesCpu::php() {
     pushToStack(regStatus);
 }
 
-int NesCpu::pla() {
+void NesCpu::pla() {
     this->regAccumulator = pullFromStack();
 
     setZeroFlag(this->regAccumulator == 0);
     setNegativeFlag(this->regAccumulator & 0x80);
 }
 
-int NesCpu::plp() {
+void NesCpu::plp() {
     this->regStatus = pullFromStack();
 }
 
 // Logical
-int NesCpu::anda(const uint8_t &operand) {
+void NesCpu::anda(const uint8_t &operand) {
     uint8_t result = this->regAccumulator & operand;
     setZeroFlag(result == 0);
     setNegativeFlag(result & 0x80);
@@ -574,7 +574,7 @@ int NesCpu::anda(const uint8_t &operand) {
     this->regAccumulator = result;
 }
 
-int NesCpu::eor(const uint8_t &operand) {
+void NesCpu::eor(const uint8_t &operand) {
     uint8_t result = this->regAccumulator ^ operand;
     setZeroFlag(result == 0);
     setNegativeFlag(result & 0x80);
@@ -582,7 +582,7 @@ int NesCpu::eor(const uint8_t &operand) {
     this->regAccumulator = result;
 }
 
-int NesCpu::ora(const uint8_t &operand) {
+void NesCpu::ora(const uint8_t &operand) {
     uint8_t result = this->regAccumulator | operand;
     setZeroFlag(result == 0);
     setNegativeFlag(result & 0x80);
@@ -590,14 +590,14 @@ int NesCpu::ora(const uint8_t &operand) {
     this->regAccumulator = result;
 }
 
-int NesCpu::bit(const uint8_t &operand) {
+void NesCpu::bit(const uint8_t &operand) {
     setNegativeFlag(operand & 0x80);
     setOverflowFlag(operand & 0x40);
     setZeroFlag(this->regAccumulator & operand);
 }
 
 // Arithmetic
-int NesCpu::adc(const uint8_t &operand) {
+void NesCpu::adc(const uint8_t &operand) {
     uint16_t result = this->regAccumulator + operand + isCarryFlag();
    
     setCarryFlag(result > 0xFF);
@@ -608,7 +608,7 @@ int NesCpu::adc(const uint8_t &operand) {
     this->regAccumulator = (uint8_t)result;
 }
 
-int NesCpu::sbc(const uint8_t &operand) {
+void NesCpu::sbc(const uint8_t &operand) {
     uint8_t result = this->regAccumulator - operand - !isCarryFlag();
 
     setCarryFlag(!(result & 0x100));
@@ -618,7 +618,7 @@ int NesCpu::sbc(const uint8_t &operand) {
 }
 
 // Compare
-int NesCpu::cmp(const uint8_t &operand) {
+void NesCpu::cmp(const uint8_t &operand) {
     uint16_t result = this->regAccumulator - operand;
 
     setCarryFlag(!(result & 0x100));
@@ -626,7 +626,7 @@ int NesCpu::cmp(const uint8_t &operand) {
     setNegativeFlag(result & 0x80);
 }
 
-int NesCpu::cpx(const uint8_t &operand) {
+void NesCpu::cpx(const uint8_t &operand) {
     uint16_t result = this->regX - operand;
 
     setCarryFlag(!(result & 0x100));
@@ -634,7 +634,7 @@ int NesCpu::cpx(const uint8_t &operand) {
     setNegativeFlag(result & 0x80);
 }
 
-int NesCpu::cpy(const uint8_t &operand) {
+void NesCpu::cpy(const uint8_t &operand) {
     uint16_t result = this->regY - operand;
 
     setCarryFlag(!(result & 0x100));
@@ -642,7 +642,7 @@ int NesCpu::cpy(const uint8_t &operand) {
     setNegativeFlag(result & 0x80);
 }
 
-int NesCpu::inc(const uint16_t &operandAddress) {
+void NesCpu::inc(const uint16_t &operandAddress) {
     uint8_t result = this->memory[operandAddress] + 1;
     setZeroFlag(result == 0);
     setNegativeFlag(result & 0x80);
@@ -651,19 +651,19 @@ int NesCpu::inc(const uint16_t &operandAddress) {
 }
 
 // Increments/Decrements
-int NesCpu::inx() {
+void NesCpu::inx() {
     this->regX++;
     setZeroFlag(this->regX == 0);
     setNegativeFlag(this->regX & 0x80);
 }
 
-int NesCpu::iny() {
+void NesCpu::iny() {
     this->regY++;
     setZeroFlag(this->regY == 0);
     setNegativeFlag(this->regY & 0x80);
 }
 
-int NesCpu::dec(const uint16_t &operandAddress) {
+void NesCpu::dec(const uint16_t &operandAddress) {
     uint8_t result = this->memory[operandAddress] - 1;
     setZeroFlag(result == 0);
     setNegativeFlag(result & 0x80);
@@ -671,20 +671,20 @@ int NesCpu::dec(const uint16_t &operandAddress) {
     this->memory[operandAddress] = result;
 }
 
-int NesCpu::dex() {
+void NesCpu::dex() {
     this->regX--;
     setZeroFlag(this->regX == 0);
     setNegativeFlag(this->regX & 0x80);
 }
 
-int NesCpu::dey() {
+void NesCpu::dey() {
     this->regY--;
     setZeroFlag(this->regY == 0);
     setNegativeFlag(this->regY & 0x80);
 }
 
 // Shifts/Rotations
-int NesCpu::asl(const uint16_t &operandAddress) {
+void NesCpu::asl(const uint16_t &operandAddress) {
     uint8_t operand = this->memory[operandAddress];
     setCarryFlag(operand & 0x80);
     operand = operand << 1;
@@ -694,14 +694,14 @@ int NesCpu::asl(const uint16_t &operandAddress) {
     this->memory[operandAddress] = operand;
 }
 
-int NesCpu::asla() {;
+void NesCpu::asla() {;
     setCarryFlag(this->regAccumulator & 0x80);
     this->regAccumulator = this->regAccumulator << 1;
     setZeroFlag(this->regAccumulator == 0);
     setNegativeFlag(this->regAccumulator & 0x80);
 }
 
-int NesCpu::lsr(const uint16_t &operandAddress) {
+void NesCpu::lsr(const uint16_t &operandAddress) {
     uint8_t operand = this->memory[operandAddress];
     setCarryFlag(operand & 0x1);
     operand = operand >> 1;
@@ -711,14 +711,14 @@ int NesCpu::lsr(const uint16_t &operandAddress) {
     this->memory[operandAddress] = operand;
 }
 
-int NesCpu::lsra() {
+void NesCpu::lsra() {
     setCarryFlag(this->regAccumulator & 0x1);
     this->regAccumulator = this->regAccumulator >> 1;
     setZeroFlag(this->regAccumulator == 0);
     setNegativeFlag(false);
 }
 
-int NesCpu::rol(const uint16_t &operandAddress) {
+void NesCpu::rol(const uint16_t &operandAddress) {
     bool carryFlag = isCarryFlag();
     uint8_t operand = this->memory[operandAddress];
     setCarryFlag(operand & 0x80);
@@ -732,7 +732,7 @@ int NesCpu::rol(const uint16_t &operandAddress) {
     this->memory[operandAddress] = operand;
 }
 
-int NesCpu::rola() {
+void NesCpu::rola() {
     bool carryFlag = isCarryFlag();
     setCarryFlag(this->regAccumulator & 0x80);
     this->regAccumulator = this->regAccumulator << 1;
@@ -743,7 +743,7 @@ int NesCpu::rola() {
     setNegativeFlag(this->regAccumulator & 0x80);
 }
 
-int NesCpu::ror(const uint16_t &operandAddress) {
+void NesCpu::ror(const uint16_t &operandAddress) {
     bool carryFlag = isCarryFlag();
     uint8_t operand = this->memory[operandAddress];
     setCarryFlag(operand & 0x1);
@@ -757,7 +757,7 @@ int NesCpu::ror(const uint16_t &operandAddress) {
     this->memory[operandAddress] = operand;
 }
 
-int NesCpu::rora() {
+void NesCpu::rora() {
     bool carryFlag = isCarryFlag();
     setCarryFlag(this->regAccumulator & 0x1);
     this->regAccumulator = this->regAccumulator >> 1;
@@ -769,17 +769,17 @@ int NesCpu::rora() {
 }
 
 // Jumps/Subroutines
-int NesCpu::jmp(const uint16_t &address) {
+void NesCpu::jmp(const uint16_t &address) {
     programCounter = address;
 }
 
-int NesCpu::jsr(const uint16_t &address) {
+void NesCpu::jsr(const uint16_t &address) {
     pushToStack((uint8_t)(programCounter >> 8));
     pushToStack((uint8_t)programCounter);
     programCounter = address;
 }
 
-int NesCpu::rts() {
+void NesCpu::rts() {
     uint8_t pcLow = pullFromStack();
     uint8_t pcHigh = pullFromStack();
     programCounter = ((uint16_t)pcHigh << 8 | pcLow) + 1;
@@ -851,31 +851,31 @@ bool NesCpu::bvs(const int8_t &offset) {
 }
 
 // Status Flag Changes
-int NesCpu::clc() {
+void NesCpu::clc() {
     setCarryFlag(false);
 }
 
-int NesCpu::cld() {
+void NesCpu::cld() {
     setDecimalFlag(false);
 }
 
-int NesCpu::cli() {
+void NesCpu::cli() {
     setInterruptFlag(false);
 }
 
-int NesCpu::clv() {
+void NesCpu::clv() {
     setOverflowFlag(false);
 }
 
-int NesCpu::sec() {
+void NesCpu::sec() {
     setCarryFlag(true);
 }
 
-int NesCpu::sed() {
+void NesCpu::sed() {
     setDecimalFlag(true);
 }
 
-int NesCpu::sei() {
+void NesCpu::sei() {
     setInterruptFlag(true);
 }
 
