@@ -252,6 +252,7 @@ int NesCpu::execute(const Instruction &instruction) {
             sei();
             break;
 
+        case Mnemonic::NOP:
         default:
             // Unknown opcode, handle error here
             break;

@@ -125,7 +125,7 @@ private:
 
 	// System Functions
     void brk();      // BRK - break / interrupt
-	void nop();      // NOP - no operation
+	//void nop();      // NOP - no operation
 	void rti();      // RTI - return from interrupt
 
     // Status Flag operations
